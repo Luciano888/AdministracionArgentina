@@ -2,6 +2,12 @@ node_modules
 dist
 .env
 .env.local
+.env.*.local
+*.log
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
 *.tsbuildinfo
 playwright-report
 test-results
