@@ -1,3 +1,4 @@
+import { useAdmin } from "@/lib/session";
 import type { AdminSession } from "@/types";
 
 const API_BASE = import.meta.env.VITE_API_BASE ?? "";
@@ -25,6 +26,11 @@ export async function adminFetch<T>(
     body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
   });
   const data = (await res.json().catch(() => ({}))) as T & { error?: string };
+  if (res.status === 401 && options.token) {
+    // Token vencido o revocado: se cierra la sesión y RequireSession lleva al login.
+    useAdmin.getState().logout();
+    throw new Error("La sesión venció. Volvé a entrar.");
+  }
   if (!res.ok) throw new Error(data.error || `Error ${res.status}`);
   return data;
 }
