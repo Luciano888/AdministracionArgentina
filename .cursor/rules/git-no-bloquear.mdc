@@ -1,0 +1,24 @@
+---
+description: No quedarse esperando comandos de git que no responden
+alwaysApply: true
+---
+
+# Git sin bloquear la sesión
+
+Un comando de git tiene que terminar enseguida. Si no responde, se corta y se sigue.
+
+- Lanzar git con `--no-pager` y sin nada interactivo (`rebase -i`, `add -i`, commit sin `-m`, diálogos de credenciales).
+- En PowerShell no encadenar comandos con `&`.
+- Esperar como máximo unos 15 segundos. Si el comando sigue corriendo, matarlo y no volver a lanzar el mismo.
+- No hacer polling del proceso ni reintentar a ciegas. Seguir con el trabajo, o decir qué comando se cortó.
+- `status`, `diff` y `log` cortos alcanzan. No lanzar `fetch`, `pull` o `push` salvo que el usuario lo pida.
+
+```powershell
+# Mal: se queda en el pager o en un prompt
+git log
+git commit
+
+# Bien: termina solo
+git --no-pager log -5 --oneline
+git commit -m "mensaje"
+```

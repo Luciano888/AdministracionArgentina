@@ -1,0 +1,14 @@
+---
+description: Toda sección que espera datos muestra un spinner hasta que termina de cargar
+alwaysApply: true
+---
+
+# Spinner mientras carga
+
+Si una sección todavía no tiene su dato, muestra `Spinner` de `src/components/ui.tsx`. No muestres el vacío, el formulario en blanco ni un texto suelto de «Cargando…» como si la sección ya hubiera respondido.
+
+- El spinner lleva un texto que dice qué falta: «Cargando eventos», «Cargando el evento», «Buscando en el mapa…».
+- El estado de carga empieza en verdadero cuando hay una petición. Pasa a falso en `finally`, también si falla.
+- El mensaje de vacío («Sin tarifas», «Todavía no hay recintos») solo aparece cuando la carga terminó y la lista está vacía.
+- Al guardar o borrar, la lista que se vuelve a pedir muestra el spinner otra vez.
+- Un botón que dice «Guardando…» no reemplaza el spinner de la sección que espera datos.
