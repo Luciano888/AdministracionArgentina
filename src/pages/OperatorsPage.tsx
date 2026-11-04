@@ -80,7 +80,7 @@ export function OperatorsPage() {
           </tbody>
         </table>
         {loading ? <Spinner label="Cargando cajeros" className="py-4" /> : null}
-        {!loading && rows.length === 0 ? <p className="pt-3 text-sm text-slate-500">Sin cajeros.</p> : null}
+        {!loading && !loadError && rows.length === 0 ? <p className="pt-3 text-sm text-slate-500">Sin cajeros.</p> : null}
       </Card>
       <form onSubmit={onSubmit}>
         <Card className="grid gap-4 sm:grid-cols-2">

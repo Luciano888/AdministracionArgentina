@@ -57,7 +57,7 @@ export function TicketsPage() {
           </Card>
         ))}
         {loading ? <Spinner label="Cargando entradas" className="py-4" /> : null}
-        {!loading && rows.length === 0 ? <p className="text-sm text-slate-500">No hay entradas para mostrar.</p> : null}
+        {!loading && !error && rows.length === 0 ? <p className="text-sm text-slate-500">No hay entradas para mostrar.</p> : null}
       </div>
     </div>
   );

@@ -72,7 +72,7 @@ export function TerminalsPage() {
           ))}
         </ul>
         {loading ? <Spinner label="Cargando terminales" className="py-4" /> : null}
-        {!loading && rows.length === 0 ? <p className="text-sm text-slate-500">Sin terminales.</p> : null}
+        {!loading && !loadError && rows.length === 0 ? <p className="text-sm text-slate-500">Sin terminales.</p> : null}
       </Card>
       <form onSubmit={onSubmit}>
         <Card className="grid gap-4 sm:grid-cols-2">

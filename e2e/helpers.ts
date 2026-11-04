@@ -1,8 +1,8 @@
 import { expect, type APIRequestContext, type Locator, type Page } from "@playwright/test";
 
 /**
- * Spinner de una sección por su texto. `getByRole("status", { name })` no sirve: el rol status
- * no toma el nombre de su contenido, así que nunca encuentra nada y `toBeHidden()` pasa siempre.
+ * Spinner de una sección por su texto. El rol status no toma el nombre de su contenido; el Spinner
+ * ahora lleva aria-label, pero filtrar por texto también cubre otros avisos con role="status".
  */
 export function spinner(scope: Page | Locator, label: string) {
   return scope.getByRole("status").filter({ hasText: label });

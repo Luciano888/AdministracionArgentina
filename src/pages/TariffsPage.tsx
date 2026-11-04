@@ -109,7 +109,7 @@ export function TariffsPage() {
           </tbody>
         </table>
         {loading ? <Spinner label="Cargando tarifas" className="py-4" /> : null}
-        {!loading && rows.length === 0 ? <p className="pt-3 text-sm text-slate-500">Sin tarifas.</p> : null}
+        {!loading && !loadError && rows.length === 0 ? <p className="pt-3 text-sm text-slate-500">Sin tarifas.</p> : null}
       </Card>
       <form onSubmit={onSubmit}>
         <Card className="grid gap-4 sm:grid-cols-2">

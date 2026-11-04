@@ -173,7 +173,7 @@ export function SessionsPage() {
           </tbody>
         </table>
         {loading ? <Spinner label="Cargando sesiones" className="py-4" /> : null}
-        {!loading && rows.length === 0 ? <p className="pt-3 text-sm text-slate-500">Sin sesiones publicadas.</p> : null}
+        {!loading && !loadError && rows.length === 0 ? <p className="pt-3 text-sm text-slate-500">Sin sesiones publicadas.</p> : null}
         {!loading && rows.length > 0 && visible.length === 0 ? (
           <p className="pt-3 text-sm text-slate-500">No hay sesiones en ese mes y semana.</p>
         ) : null}

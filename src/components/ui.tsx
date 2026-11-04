@@ -99,7 +99,7 @@ export function Banner({ children }: { children: ReactNode }) {
 
 export function Spinner({ label, className = "" }: { label: string; className?: string }) {
   return (
-    <div className={`flex items-center gap-2 text-sm text-slate-500 ${className}`} role="status" aria-live="polite">
+    <div className={`flex items-center gap-2 text-sm text-slate-500 ${className}`} role="status" aria-live="polite" aria-label={label}>
       <span className="size-4 shrink-0 animate-spin rounded-full border-2 border-slate-200 border-t-primary" aria-hidden />
       <span>{label}</span>
     </div>
