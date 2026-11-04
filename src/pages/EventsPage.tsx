@@ -1,36 +1,13 @@
-import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { EventCover } from "@/components/EventCover";
 import { Banner, PageTitle, Spinner } from "@/components/ui";
-import { adminFetch } from "@/lib/api";
 import { formatARS } from "@/lib/format";
-import { useAdmin } from "@/lib/session";
+import { useAdminQuery } from "@/lib/useAdminQuery";
 import type { ShowEvent } from "@/types";
 
 export function EventsPage() {
   const { tenantId = "" } = useParams();
-  const token = useAdmin((s) => s.session)!.token;
-  const [rows, setRows] = useState<ShowEvent[]>([]);
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    let cancelled = false;
-    setLoading(true);
-    adminFetch<ShowEvent[]>("Admin/Events", { token, query: { tenantId } })
-      .then((next) => {
-        if (!cancelled) setRows(next);
-      })
-      .catch((err) => {
-        if (!cancelled) setError(err instanceof Error ? err.message : "No se pudieron cargar los eventos");
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [tenantId, token]);
+  const { data: rows = [], loading, error } = useAdminQuery<ShowEvent[]>("Admin/Events", { tenantId });
 
   return (
     <div className="space-y-6">

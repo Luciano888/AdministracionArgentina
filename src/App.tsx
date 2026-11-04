@@ -1,4 +1,4 @@
-import { type ReactNode, useEffect, useState } from "react";
+import { type ReactNode, useSyncExternalStore } from "react";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { RequireSession, Shell } from "@/components/Shell";
 import { Spinner } from "@/components/ui";
@@ -15,12 +15,7 @@ import { VenueFormPage } from "@/pages/VenueFormPage";
 import { VenuesPage } from "@/pages/VenuesPage";
 
 function Hydrate({ children }: { children: ReactNode }) {
-  const [ready, setReady] = useState(() => useAdmin.persist.hasHydrated());
-  useEffect(() => {
-    const unsub = useAdmin.persist.onFinishHydration(() => setReady(true));
-    if (useAdmin.persist.hasHydrated()) setReady(true);
-    return unsub;
-  }, []);
+  const ready = useSyncExternalStore(useAdmin.persist.onFinishHydration, useAdmin.persist.hasHydrated);
   if (!ready) return <div className="p-8"><Spinner label="Cargando la sesión" /></div>;
   return children;
 }

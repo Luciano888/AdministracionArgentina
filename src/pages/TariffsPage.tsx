@@ -1,9 +1,10 @@
-import { type FormEvent, useEffect, useState } from "react";
+import { type FormEvent, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { Banner, Card, Field, GhostButton, PageTitle, PrimaryButton, Spinner } from "@/components/ui";
 import { adminFetch } from "@/lib/api";
 import { formatARS } from "@/lib/format";
 import { useAdmin } from "@/lib/session";
+import { useAdminQuery } from "@/lib/useAdminQuery";
 import type { Tariff } from "@/types";
 
 const EMPTY = { id: 0, nombre: "", pvp: "", pvpBoxOffice: "", descripcion: "" };
@@ -11,24 +12,10 @@ const EMPTY = { id: 0, nombre: "", pvp: "", pvpBoxOffice: "", descripcion: "" };
 export function TariffsPage() {
   const { tenantId = "", eventId = "" } = useParams();
   const token = useAdmin((s) => s.session)!.token;
-  const [rows, setRows] = useState<Tariff[]>([]);
+  const { data: rows = [], loading, error: loadError, reload } = useAdminQuery<Tariff[]>("Admin/Tariffs", { eventId });
   const [draft, setDraft] = useState(EMPTY);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
-  const [loading, setLoading] = useState(true);
-
-  function load() {
-    setLoading(true);
-    return adminFetch<Tariff[]>("Admin/Tariffs", { token, query: { eventId } })
-      .then(setRows)
-      .catch((err) => setError(err instanceof Error ? err.message : "No se pudieron cargar las tarifas"))
-      .finally(() => setLoading(false));
-  }
-
-  useEffect(() => {
-    load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [eventId, token]);
 
   async function onSubmit(event: FormEvent) {
     event.preventDefault();
@@ -49,7 +36,7 @@ export function TariffsPage() {
         },
       });
       setDraft(EMPTY);
-      await load();
+      reload();
     } catch (err) {
       setError(err instanceof Error ? err.message : "No se pudo guardar");
     } finally {
@@ -62,7 +49,7 @@ export function TariffsPage() {
     setError("");
     try {
       await adminFetch("Admin/Tariffs", { method: "DELETE", token, query: { id } });
-      await load();
+      reload();
     } catch (err) {
       setError(err instanceof Error ? err.message : "No se pudo borrar");
     }
@@ -77,7 +64,7 @@ export function TariffsPage() {
           Volver al evento
         </Link>
       </p>
-      {error ? <Banner>{error}</Banner> : null}
+      {error || loadError ? <Banner>{error || loadError}</Banner> : null}
       <Card className="overflow-x-auto">
         <table className="w-full text-left text-sm">
           <thead className="text-slate-500">

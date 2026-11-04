@@ -1,46 +1,27 @@
-import { type FormEvent, useEffect, useRef, useState } from "react";
+import { type FormEvent, useState } from "react";
 import { useParams } from "react-router-dom";
 import { Banner, Card, Field, PageTitle, PrimaryButton, Spinner } from "@/components/ui";
-import { adminFetch } from "@/lib/api";
 import { formatARS, formatWhen } from "@/lib/format";
-import { useAdmin } from "@/lib/session";
+import { useAdminQuery } from "@/lib/useAdminQuery";
 import type { IssuedOrder } from "@/types";
 
 const CHANNEL: Record<string, string> = { web: "Web", box_office: "Taquilla" };
 
 export function TicketsPage() {
   const { tenantId = "" } = useParams();
-  const token = useAdmin((s) => s.session)!.token;
   const [q, setQ] = useState("");
-  const [rows, setRows] = useState<IssuedOrder[]>([]);
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(true);
-  const loadSeq = useRef(0);
-
-  function load(query = q) {
-    const seq = ++loadSeq.current;
-    setLoading(true);
-    return adminFetch<IssuedOrder[]>("Admin/Entradas", { token, query: { tenantId, q: query } })
-      .then((next) => {
-        if (seq === loadSeq.current) setRows(next);
-      })
-      .catch((err) => {
-        if (seq === loadSeq.current) setError(err instanceof Error ? err.message : "No se pudieron cargar las entradas");
-      })
-      .finally(() => {
-        if (seq === loadSeq.current) setLoading(false);
-      });
-  }
-
-  useEffect(() => {
-    load("");
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tenantId, token]);
+  const [search, setSearch] = useState("");
+  const {
+    data: rows = [],
+    loading,
+    error,
+    reload,
+  } = useAdminQuery<IssuedOrder[]>("Admin/Entradas", { tenantId, q: search });
 
   function onSubmit(event: FormEvent) {
     event.preventDefault();
-    setError("");
-    load(q);
+    if (q === search) reload();
+    else setSearch(q);
   }
 
   return (

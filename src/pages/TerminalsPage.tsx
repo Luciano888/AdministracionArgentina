@@ -1,8 +1,9 @@
-import { type FormEvent, useEffect, useState } from "react";
+import { type FormEvent, useState } from "react";
 import { useParams } from "react-router-dom";
 import { Banner, Card, Field, GhostButton, PageTitle, PrimaryButton, Spinner } from "@/components/ui";
 import { adminFetch } from "@/lib/api";
 import { useAdmin } from "@/lib/session";
+import { useAdminQuery } from "@/lib/useAdminQuery";
 import type { Terminal } from "@/types";
 
 const EMPTY = { id: "", code: "", name: "" };
@@ -10,24 +11,10 @@ const EMPTY = { id: "", code: "", name: "" };
 export function TerminalsPage() {
   const { tenantId = "" } = useParams();
   const token = useAdmin((s) => s.session)!.token;
-  const [rows, setRows] = useState<Terminal[]>([]);
+  const { data: rows = [], loading, error: loadError, reload } = useAdminQuery<Terminal[]>("Admin/Terminals", { tenantId });
   const [draft, setDraft] = useState(EMPTY);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
-  const [loading, setLoading] = useState(true);
-
-  function load() {
-    setLoading(true);
-    return adminFetch<Terminal[]>("Admin/Terminals", { token, query: { tenantId } })
-      .then(setRows)
-      .catch((err) => setError(err instanceof Error ? err.message : "No se pudieron cargar las terminales"))
-      .finally(() => setLoading(false));
-  }
-
-  useEffect(() => {
-    load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tenantId, token]);
 
   async function remove(id: string) {
     if (!confirm("¿Borrar esta terminal? Solo se puede si no tiene turnos ni ventas.")) return;
@@ -35,7 +22,7 @@ export function TerminalsPage() {
     try {
       await adminFetch("Admin/Terminals", { method: "DELETE", token, query: { id } });
       if (draft.id === id) setDraft(EMPTY);
-      await load();
+      reload();
     } catch (err) {
       setError(err instanceof Error ? err.message : "No se pudo borrar");
     }
@@ -52,7 +39,7 @@ export function TerminalsPage() {
         body: { id: draft.id || undefined, tenantId, code: draft.code, name: draft.name },
       });
       setDraft(EMPTY);
-      await load();
+      reload();
     } catch (err) {
       setError(err instanceof Error ? err.message : "No se pudo guardar");
     } finally {
@@ -64,7 +51,7 @@ export function TerminalsPage() {
     <div className="space-y-6">
       <PageTitle kicker="Caja">Terminales</PageTitle>
       <p className="text-sm text-slate-500">El código es el que elige el cajero al abrir el turno, por ejemplo TPV-01.</p>
-      {error ? <Banner>{error}</Banner> : null}
+      {error || loadError ? <Banner>{error || loadError}</Banner> : null}
       <Card>
         <ul className="divide-y divide-slate-100">
           {rows.map((row) => (

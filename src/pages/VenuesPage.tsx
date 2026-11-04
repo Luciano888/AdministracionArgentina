@@ -1,33 +1,12 @@
-import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Banner, Card, PageTitle, Spinner } from "@/components/ui";
-import { adminFetch } from "@/lib/api";
 import { useAdmin } from "@/lib/session";
+import { useAdminQuery } from "@/lib/useAdminQuery";
 import type { Venue } from "@/types";
 
 export function VenuesPage() {
   const session = useAdmin((s) => s.session)!;
-  const [rows, setRows] = useState<Venue[]>([]);
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    let cancelled = false;
-    setLoading(true);
-    adminFetch<Venue[]>("Admin/Tenants", { token: session.token })
-      .then((next) => {
-        if (!cancelled) setRows(next);
-      })
-      .catch((err) => {
-        if (!cancelled) setError(err instanceof Error ? err.message : "No se pudieron cargar los recintos");
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [session.token]);
+  const { data: rows = [], loading, error } = useAdminQuery<Venue[]>("Admin/Tenants");
 
   return (
     <div className="space-y-6">

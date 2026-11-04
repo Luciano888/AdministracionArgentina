@@ -1,9 +1,10 @@
 import { Building2, CalendarClock, LogOut, Monitor, Ticket, Users, Wallet, type LucideIcon } from "lucide-react";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
 import { NavLink, Navigate, Outlet, useParams } from "react-router-dom";
 import { Spinner } from "@/components/ui";
 import { adminFetch } from "@/lib/api";
 import { useAdmin } from "@/lib/session";
+import { useAdminQuery } from "@/lib/useAdminQuery";
 import type { ShowEvent, Venue } from "@/types";
 
 function EventMenu({
@@ -63,8 +64,6 @@ export function Shell() {
   const setVenue = useAdmin((s) => s.setVenue);
   const logout = useAdmin((s) => s.logout);
   const { tenantId = "", eventId = "" } = useParams();
-  const [eventTitle, setEventTitle] = useState("");
-  const [eventLoading, setEventLoading] = useState(false);
 
   useEffect(() => {
     if (!tenantId) {
@@ -88,30 +87,9 @@ export function Shell() {
     };
   }, [tenantId, session.token, setVenue]);
 
-  useEffect(() => {
-    if (!tenantId || !eventId) {
-      setEventTitle("");
-      setEventLoading(false);
-      return;
-    }
-    let cancelled = false;
-    setEventTitle("");
-    setEventLoading(true);
-    adminFetch<ShowEvent[]>("Admin/Events", { token: session.token, query: { tenantId } })
-      .then((rows) => {
-        if (cancelled) return;
-        setEventTitle(rows.find((row) => row.id === eventId)?.titulo ?? "Este evento");
-      })
-      .catch(() => {
-        if (!cancelled) setEventTitle("Este evento");
-      })
-      .finally(() => {
-        if (!cancelled) setEventLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [tenantId, eventId, session.token]);
+  const eventQuery = useAdminQuery<ShowEvent[]>("Admin/Events", { tenantId }, { enabled: Boolean(tenantId && eventId) });
+  const eventLoading = eventQuery.loading;
+  const eventTitle = eventLoading ? "" : (eventQuery.data?.find((row) => row.id === eventId)?.titulo ?? "Este evento");
 
   if (session.role === "admin" && session.tenantId && tenantId && tenantId !== session.tenantId) {
     return <Navigate to={`/recintos/${session.tenantId}/eventos`} replace />;
