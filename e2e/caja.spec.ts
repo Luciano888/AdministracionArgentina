@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { acceptDialogs, loginVenue, removeTerminalByCode, stamp, spinner } from "./helpers";
+import { loginVenue, removeTerminalByCode, stamp, spinner, confirmDelete } from "./helpers";
 
 test("se crea y se edita un cajero", async ({ page }) => {
   const mark = stamp();
@@ -34,7 +34,6 @@ test("se crea y se edita un cajero", async ({ page }) => {
 });
 
 test("se crea una terminal y no se repite el código", async ({ page }) => {
-  acceptDialogs(page);
   const mark = stamp().slice(-6).toUpperCase();
   const code = `E2E${mark}`;
   await loginVenue(page);
@@ -45,6 +44,7 @@ test("se crea una terminal y no se repite el código", async ({ page }) => {
   await page.getByLabel("Código").fill(code);
   await page.getByLabel("Nombre").fill(`Boletería ${code}`);
   await page.getByRole("button", { name: "Crear terminal" }).click();
+  await expect(page.getByText("Terminal guardada")).toBeVisible();
   await expect(page.getByText(`${code} · Boletería ${code}`)).toBeVisible();
   await page.getByRole("listitem").filter({ hasText: code }).getByRole("button", { name: "Editar" }).click();
   await page.getByLabel("Nombre").fill(`Mostrador ${code}`);
@@ -55,8 +55,19 @@ test("se crea una terminal y no se repite el código", async ({ page }) => {
   await page.getByLabel("Nombre").fill("Otra");
   await page.getByRole("button", { name: "Crear terminal" }).click();
   await expect(page.getByText("Esa terminal ya existe")).toBeVisible();
-  await page.getByRole("listitem").filter({ hasText: code }).getByRole("button", { name: "Borrar" }).click();
-  await expect(page.getByRole("listitem").filter({ hasText: code })).toHaveCount(0);
+
+  const item = page.getByRole("listitem").filter({ hasText: code });
+  await item.getByRole("button", { name: "Borrar" }).click();
+  const dialog = page.getByRole("dialog", { name: "¿Borrar esta terminal?" });
+  await expect(dialog).toContainText("Solo se puede si no tiene turnos ni ventas.");
+  await dialog.getByRole("button", { name: "Cancelar" }).click();
+  await expect(dialog).toBeHidden();
+  await expect(item).toBeVisible();
+
+  await item.getByRole("button", { name: "Borrar" }).click();
+  await confirmDelete(page);
+  await expect(page.getByText("Terminal borrada")).toBeVisible();
+  await expect(item).toHaveCount(0);
   } finally {
     await removeTerminalByCode(page, code);
   }

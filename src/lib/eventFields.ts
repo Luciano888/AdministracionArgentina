@@ -1,7 +1,4 @@
-export const CATEGORIAS = ["Música", "Teatro", "Taller", "Cine", "Exposición", "Visita", "Conferencia"] as const;
-
-export const DESCRIPCION_MAX = 80;
-export const DESCRIPCION_LARGA_MAX = 280;
+// Categorías y topes viven en lib/venueConfig.ts: pueden cambiar por recinto.
 
 export const TEXTO_AMIGABLE_AYUDA =
   "Identificador de la dirección pública del evento. Minúsculas, números y guiones. Ejemplo: tango-en-el-patio.";

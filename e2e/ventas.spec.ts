@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { acceptDialogs, ensureSalesFixture, fieldSelect, loginVenue, SALES, sellOneTicket, type SalesFixture, spinner } from "./helpers";
+import { ensureSalesFixture, fieldSelect, loginVenue, SALES, sellOneTicket, type SalesFixture, spinner, confirmDelete } from "./helpers";
 
 // Usan siempre el mismo evento «E2E ventas» de ccs-001: con ventas no se puede borrar,
 // así que se reutiliza entre corridas en vez de crear uno nuevo cada vez.
@@ -15,26 +15,25 @@ test.beforeAll(async ({ request }) => {
 });
 
 test("un evento con ventas no se borra", async ({ page }) => {
-  acceptDialogs(page);
   await loginVenue(page);
   await page.goto(`/recintos/ccs-001/eventos/${fixture.eventId}`);
   await expect(page.getByLabel("Título")).toHaveValue(SALES.titulo);
   await page.getByRole("button", { name: "Borrar" }).click();
+  await confirmDelete(page);
   await expect(page.getByText("El evento tiene ventas y no se puede borrar")).toBeVisible();
 });
 
 test("una tarifa con ventas no se borra", async ({ page }) => {
-  acceptDialogs(page);
   await loginVenue(page);
   await page.goto(`/recintos/ccs-001/eventos/${fixture.eventId}/tarifas`);
   const row = page.getByRole("row", { name: new RegExp(SALES.tarifa) });
   await row.getByRole("button", { name: "Borrar" }).click();
+  await confirmDelete(page);
   await expect(page.getByText("La tarifa tiene ventas y no se puede borrar")).toBeVisible();
   await expect(row).toBeVisible();
 });
 
 test("el cupo no baja de lo vendido y la sesión con ventas no se borra", async ({ page }) => {
-  acceptDialogs(page);
   await loginVenue(page);
   await page.goto(`/recintos/ccs-001/eventos/${fixture.eventId}/sesiones`);
   await expect(spinner(page, "Cargando sesiones")).toBeHidden();
@@ -47,6 +46,7 @@ test("el cupo no baja de lo vendido y la sesión con ventas no se borra", async 
   await expect(page.getByText(/El cupo no puede bajar de \d+/)).toBeVisible();
 
   await row.getByRole("button", { name: "Borrar" }).click();
+  await confirmDelete(page);
   await expect(page.getByText("La sesión tiene ventas y no se puede borrar")).toBeVisible();
 });
 

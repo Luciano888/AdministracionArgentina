@@ -100,7 +100,15 @@ function mapSrc(place: Place) {
   return `https://www.openstreetmap.org/export/embed.html?bbox=${encodeURIComponent(bbox)}&layer=mapnik&marker=${encodeURIComponent(`${place.lat},${place.lon}`)}`;
 }
 
-export function LocationField({ value, onChange }: { value: string; onChange: (value: string) => void }) {
+export function LocationField({
+  value,
+  onChange,
+  country,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  country: string;
+}) {
   const [places, setPlaces] = useState<Place[]>([]);
   const [picked, setPicked] = useState<Place | null>(null);
   const [editing, setEditing] = useState(false);
@@ -120,7 +128,7 @@ export function LocationField({ value, onChange }: { value: string; onChange: (v
       try {
         const url = new URL("https://nominatim.openstreetmap.org/search");
         url.searchParams.set("format", "jsonv2");
-        url.searchParams.set("countrycodes", "ar");
+        url.searchParams.set("countrycodes", country);
         url.searchParams.set("limit", "5");
         url.searchParams.set("q", query);
         const res = await fetch(url, { signal: ctrl.signal, headers: { Accept: "application/json" } });
@@ -139,7 +147,7 @@ export function LocationField({ value, onChange }: { value: string; onChange: (v
       window.clearTimeout(timer);
       ctrl.abort();
     };
-  }, [searching, query]);
+  }, [searching, query, country]);
 
   return (
     <div className="space-y-1.5 text-sm">
@@ -188,10 +196,12 @@ export function ImageField({
   imagen,
   onChange,
   onError,
+  maxBytes,
 }: {
   imagen: string;
   onChange: (value: string) => void;
   onError: (message: string) => void;
+  maxBytes: number;
 }) {
   return (
     <div className="space-y-2 text-sm">
@@ -203,8 +213,8 @@ export function ImageField({
           const file = e.target.files?.[0];
           e.target.value = "";
           if (!file) return;
-          if (file.size > 900_000) {
-            onError("La imagen tiene que pesar menos de 900 KB");
+          if (file.size > maxBytes) {
+            onError(`La imagen tiene que pesar menos de ${Math.round(maxBytes / 1000)} KB`);
             return;
           }
           const reader = new FileReader();

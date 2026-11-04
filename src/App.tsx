@@ -1,5 +1,6 @@
 import { type ReactNode, useSyncExternalStore } from "react";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import { FeedbackProvider } from "@/components/Feedback";
 import { RequireSession, Shell } from "@/components/Shell";
 import { Spinner } from "@/components/ui";
 import { useAdmin } from "@/lib/session";
@@ -24,6 +25,7 @@ export default function App() {
   return (
     <Hydrate>
       <BrowserRouter>
+        <FeedbackProvider>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
           <Route
@@ -47,6 +49,7 @@ export default function App() {
           </Route>
           <Route path="*" element={<Navigate to="/recintos" replace />} />
         </Routes>
+        </FeedbackProvider>
       </BrowserRouter>
     </Hydrate>
   );

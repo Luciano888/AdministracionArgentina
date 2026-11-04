@@ -1,8 +1,8 @@
 import { expect, type APIRequestContext, type Locator, type Page } from "@playwright/test";
 
 /**
- * Spinner de una sección por su texto. `getByRole("status", { name })` no sirve: el rol status
- * no toma el nombre de su contenido, así que nunca encuentra nada y `toBeHidden()` pasa siempre.
+ * Spinner de una sección por su texto. El rol status no toma el nombre de su contenido; el Spinner
+ * ahora lleva aria-label, pero filtrar por texto también cubre otros avisos con role="status".
  */
 export function spinner(scope: Page | Locator, label: string) {
   return scope.getByRole("status").filter({ hasText: label });
@@ -33,8 +33,11 @@ export async function loginVenue(page: Page) {
   await expect(page.getByRole("heading", { name: "Eventos" })).toBeVisible();
 }
 
-export function acceptDialogs(page: Page) {
-  page.on("dialog", (dialog) => dialog.accept());
+/** Confirma el diálogo propio del panel («¿Borrar …?») y espera a que se cierre. */
+export async function confirmDelete(page: Page) {
+  const dialog = page.getByRole("dialog");
+  await dialog.getByRole("button", { name: "Borrar" }).click();
+  await expect(dialog).toBeHidden();
 }
 
 async function venueToken(request: APIRequestContext) {

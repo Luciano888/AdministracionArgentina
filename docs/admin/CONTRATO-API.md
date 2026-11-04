@@ -47,3 +47,21 @@ La tienda y la taquilla solo ofrecen estas filas. No se crea una sesión con cup
 ## Entradas
 
 - `GET Admin/Entradas?tenantId=&q=` — órdenes con canal (`web` o `box_office`), estado y tickets. Solo lectura.
+
+## Propuesto: config por recinto
+
+> **Todavía no está en la API.** El panel ya lo lee y, si no viene, usa los valores por defecto. Cuando se implemente en Venta Online, esta sección se copia a `VentaOnlineArgentina/docs/admin/` y deja de ser propuesta.
+
+Cada recinto de `GET Admin/Tenants` puede traer un campo opcional `config`. Todo es opcional; lo que falta o no es válido toma el valor por defecto.
+
+| Campo | Por defecto | Uso en el panel |
+|-------|-------------|-----------------|
+| `categorias` | Música, Teatro, Taller, Cine, Exposición, Visita, Conferencia | Select de categoría del evento |
+| `descripcionMax` | 80 | Tope y contador de la descripción corta |
+| `descripcionLargaMax` | 280 | Tope y contador de la descripción larga |
+| `imagenMaxBytes` | 900000 | Peso máximo de la imagen del evento |
+| `locale` | `es-AR` | Formato de fechas y montos |
+| `currency` | `ARS` | Moneda de precios y totales |
+| `geocoderCountry` | `ar` | País del buscador de ubicación (Nominatim) |
+
+La API hoy valida categorías y topes con constantes propias (`src/lib/db/admin.ts`: `CATEGORIAS`, `DESCRIPCION_MAX`, `DESCRIPCION_LARGA_MAX`). Para que la config sirva, esa validación tiene que leer la del recinto. Si no, el panel ofrece una categoría y la API la rechaza con 400. Además, `publicTenant` tiene que incluir `config` en la respuesta.

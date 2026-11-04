@@ -1,13 +1,14 @@
 import { Link, useParams } from "react-router-dom";
 import { EventCover } from "@/components/EventCover";
 import { Banner, PageTitle, Spinner } from "@/components/ui";
-import { formatARS } from "@/lib/format";
 import { useAdminQuery } from "@/lib/useAdminQuery";
+import { useVenueConfig } from "@/lib/venueConfig";
 import type { ShowEvent } from "@/types";
 
 export function EventsPage() {
   const { tenantId = "" } = useParams();
   const { data: rows = [], loading, error } = useAdminQuery<ShowEvent[]>("Admin/Events", { tenantId });
+  const { money } = useVenueConfig();
 
   return (
     <div className="space-y-6">
@@ -29,7 +30,7 @@ export function EventsPage() {
             <div className="space-y-2 p-4">
               <p className="text-xs font-medium uppercase tracking-wide text-primary">{event.categoria}</p>
               <h2 className="text-lg font-semibold">{event.titulo}</h2>
-              <p className="text-sm text-slate-500">{event.ubicacion || "Sin ubicación"} · desde {formatARS(event.minimoPrecio)}</p>
+              <p className="text-sm text-slate-500">{event.ubicacion || "Sin ubicación"} · desde {money(event.minimoPrecio)}</p>
               <div className="flex gap-3 pt-1 text-sm font-medium">
                 <Link to={`/recintos/${tenantId}/eventos/${event.id}`} className="text-primary">
                   Editar

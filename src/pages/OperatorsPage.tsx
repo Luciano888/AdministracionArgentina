@@ -2,6 +2,7 @@ import { type FormEvent, useState } from "react";
 import { useParams } from "react-router-dom";
 import { Banner, Card, Field, GhostButton, PageTitle, PrimaryButton, SelectField, Spinner } from "@/components/ui";
 import { adminFetch } from "@/lib/api";
+import { useToast } from "@/lib/feedback";
 import { useAdmin } from "@/lib/session";
 import { useAdminQuery } from "@/lib/useAdminQuery";
 import type { Staff } from "@/types";
@@ -12,6 +13,7 @@ export function OperatorsPage() {
   const { tenantId = "" } = useParams();
   const token = useAdmin((s) => s.session)!.token;
   const { data: rows = [], loading, error: loadError, reload } = useAdminQuery<Staff[]>("Admin/Operators", { tenantId });
+  const toast = useToast();
   const [draft, setDraft] = useState(EMPTY);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -35,6 +37,7 @@ export function OperatorsPage() {
         },
       });
       setDraft(EMPTY);
+      toast("Cajero guardado");
       reload();
     } catch (err) {
       setError(err instanceof Error ? err.message : "No se pudo guardar");
@@ -80,7 +83,7 @@ export function OperatorsPage() {
           </tbody>
         </table>
         {loading ? <Spinner label="Cargando cajeros" className="py-4" /> : null}
-        {!loading && rows.length === 0 ? <p className="pt-3 text-sm text-slate-500">Sin cajeros.</p> : null}
+        {!loading && !loadError && rows.length === 0 ? <p className="pt-3 text-sm text-slate-500">Sin cajeros.</p> : null}
       </Card>
       <form onSubmit={onSubmit}>
         <Card className="grid gap-4 sm:grid-cols-2">

@@ -2,55 +2,23 @@ import { type FormEvent, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { Banner, Card, Field, GhostButton, PageTitle, PrimaryButton, SelectField, Spinner } from "@/components/ui";
 import { adminFetch } from "@/lib/api";
+import { useConfirm, useToast } from "@/lib/feedback";
 import { useAdmin } from "@/lib/session";
+import { dayKey, formatFecha, monthKey, monthLabel, weekLabel, weekStart } from "@/lib/sessionDates";
 import { useAdminQuery } from "@/lib/useAdminQuery";
+import { useVenueConfig } from "@/lib/venueConfig";
 import type { ShowSession } from "@/types";
 
 const EMPTY = { id: "", fecha: "", hora: "18:00", cupo: "40" };
 const NO_ROWS: ShowSession[] = [];
 
-function parseDay(fecha: string) {
-  const [year, month, day] = fecha.split("-").map(Number);
-  return new Date(year, (month || 1) - 1, day || 1);
-}
-
-function dayKey(date: Date) {
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${date.getFullYear()}-${month}-${day}`;
-}
-
-function monthKey(fecha: string) {
-  return fecha.slice(0, 7);
-}
-
-function weekStart(fecha: string) {
-  const date = parseDay(fecha);
-  const weekday = date.getDay();
-  date.setDate(date.getDate() + (weekday === 0 ? -6 : 1 - weekday));
-  return dayKey(date);
-}
-
-function monthLabel(key: string) {
-  return new Intl.DateTimeFormat("es-AR", { month: "long", year: "numeric" }).format(parseDay(`${key}-01`));
-}
-
-function weekLabel(start: string) {
-  const from = parseDay(start);
-  const to = new Date(from);
-  to.setDate(from.getDate() + 6);
-  const format = new Intl.DateTimeFormat("es-AR", { day: "numeric", month: "short" });
-  return `${format.format(from)} – ${format.format(to)}`;
-}
-
-function formatFecha(fecha: string) {
-  return new Intl.DateTimeFormat("es-AR", { weekday: "short", day: "numeric", month: "short" }).format(parseDay(fecha));
-}
-
 export function SessionsPage() {
   const { tenantId = "", eventId = "" } = useParams();
   const token = useAdmin((s) => s.session)!.token;
   const { data: rows = NO_ROWS, loading, error: loadError, reload } = useAdminQuery<ShowSession[]>("Admin/Sessions", { eventId });
+  const { config } = useVenueConfig();
+  const confirm = useConfirm();
+  const toast = useToast();
   const [draft, setDraft] = useState(EMPTY);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -67,6 +35,7 @@ export function SessionsPage() {
         token,
         body: { id: draft.id || undefined, eventId, fecha: draft.fecha, hora: draft.hora, cupo: Number(draft.cupo) },
       });
+      toast(draft.id ? "Sesión actualizada" : "Sesión publicada");
       setDraft(EMPTY);
       reload();
     } catch (err) {
@@ -77,10 +46,11 @@ export function SessionsPage() {
   }
 
   async function remove(id: string) {
-    if (!confirm("¿Borrar esta sesión? Solo se puede si no tiene ventas ni reservas.")) return;
+    if (!(await confirm({ title: "¿Borrar esta sesión?", message: "Solo se puede si no tiene ventas ni reservas." }))) return;
     setError("");
     try {
       await adminFetch("Admin/Sessions", { method: "DELETE", token, query: { id } });
+      toast("Sesión borrada");
       reload();
     } catch (err) {
       setError(err instanceof Error ? err.message : "No se pudo borrar");
@@ -120,7 +90,7 @@ export function SessionsPage() {
           >
             {months.map((key) => (
               <option key={key} value={key}>
-                {monthLabel(key)}
+                {monthLabel(key, config.locale)}
               </option>
             ))}
           </SelectField>
@@ -132,7 +102,7 @@ export function SessionsPage() {
             <option value="">Todas las semanas del mes</option>
             {weeks.map((key) => (
               <option key={key} value={key}>
-                {weekLabel(key)}
+                {weekLabel(key, config.locale)}
               </option>
             ))}
           </SelectField>
@@ -152,7 +122,7 @@ export function SessionsPage() {
           <tbody>
             {visible.map((row) => (
               <tr key={row.id} className="border-t border-slate-100">
-                <td className="py-3">{formatFecha(row.fecha)}</td>
+                <td className="py-3">{formatFecha(row.fecha, config.locale)}</td>
                 <td>{row.hora}</td>
                 <td>{row.cupo}</td>
                 <td>{row.disponible}</td>
@@ -173,7 +143,7 @@ export function SessionsPage() {
           </tbody>
         </table>
         {loading ? <Spinner label="Cargando sesiones" className="py-4" /> : null}
-        {!loading && rows.length === 0 ? <p className="pt-3 text-sm text-slate-500">Sin sesiones publicadas.</p> : null}
+        {!loading && !loadError && rows.length === 0 ? <p className="pt-3 text-sm text-slate-500">Sin sesiones publicadas.</p> : null}
         {!loading && rows.length > 0 && visible.length === 0 ? (
           <p className="pt-3 text-sm text-slate-500">No hay sesiones en ese mes y semana.</p>
         ) : null}
@@ -187,7 +157,7 @@ export function SessionsPage() {
         <Card className="grid gap-4 sm:grid-cols-3">
           <Field label="Fecha" type="date" value={draft.fecha} onChange={(e) => setDraft({ ...draft, fecha: e.target.value })} required />
           <Field label="Hora" type="time" value={draft.hora} onChange={(e) => setDraft({ ...draft, hora: e.target.value })} required />
-          <Field label="Cupo" type="number" min={0} value={draft.cupo} onChange={(e) => setDraft({ ...draft, cupo: e.target.value })} required />
+          <Field label="Cupo" type="number" min={0} step={1} value={draft.cupo} onChange={(e) => setDraft({ ...draft, cupo: e.target.value })} required />
           <div className="flex gap-3 sm:col-span-3">
             <PrimaryButton type="submit" disabled={busy}>
               {draft.id ? "Actualizar sesión" : "Publicar sesión"}

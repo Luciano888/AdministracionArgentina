@@ -2,9 +2,10 @@ import { type FormEvent, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { Banner, Card, Field, GhostButton, PageTitle, PrimaryButton, Spinner } from "@/components/ui";
 import { adminFetch } from "@/lib/api";
-import { formatARS } from "@/lib/format";
+import { useConfirm, useToast } from "@/lib/feedback";
 import { useAdmin } from "@/lib/session";
 import { useAdminQuery } from "@/lib/useAdminQuery";
+import { useVenueConfig } from "@/lib/venueConfig";
 import type { Tariff } from "@/types";
 
 const EMPTY = { id: 0, nombre: "", pvp: "", pvpBoxOffice: "", descripcion: "" };
@@ -13,6 +14,9 @@ export function TariffsPage() {
   const { tenantId = "", eventId = "" } = useParams();
   const token = useAdmin((s) => s.session)!.token;
   const { data: rows = [], loading, error: loadError, reload } = useAdminQuery<Tariff[]>("Admin/Tariffs", { eventId });
+  const { money } = useVenueConfig();
+  const confirm = useConfirm();
+  const toast = useToast();
   const [draft, setDraft] = useState(EMPTY);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -36,6 +40,7 @@ export function TariffsPage() {
         },
       });
       setDraft(EMPTY);
+      toast(editing ? "Tarifa actualizada" : "Tarifa guardada");
       reload();
     } catch (err) {
       setError(err instanceof Error ? err.message : "No se pudo guardar");
@@ -45,10 +50,11 @@ export function TariffsPage() {
   }
 
   async function remove(id: number) {
-    if (!confirm("¿Borrar esta tarifa? Solo se puede si no tiene ventas.")) return;
+    if (!(await confirm({ title: "¿Borrar esta tarifa?", message: "Solo se puede si no tiene ventas." }))) return;
     setError("");
     try {
       await adminFetch("Admin/Tariffs", { method: "DELETE", token, query: { id } });
+      toast("Tarifa borrada");
       reload();
     } catch (err) {
       setError(err instanceof Error ? err.message : "No se pudo borrar");
@@ -82,8 +88,8 @@ export function TariffsPage() {
                   <p className="font-medium">{row.nombre}</p>
                   <p className="text-slate-500">{row.descripcion}</p>
                 </td>
-                <td>{formatARS(row.pvp)}</td>
-                <td>{row.pvpBoxOffice == null ? "Igual que web" : formatARS(row.pvpBoxOffice)}</td>
+                <td>{money(row.pvp)}</td>
+                <td>{row.pvpBoxOffice == null ? "Igual que web" : money(row.pvpBoxOffice)}</td>
                 <td className="text-right">
                   <button
                     type="button"
@@ -109,17 +115,18 @@ export function TariffsPage() {
           </tbody>
         </table>
         {loading ? <Spinner label="Cargando tarifas" className="py-4" /> : null}
-        {!loading && rows.length === 0 ? <p className="pt-3 text-sm text-slate-500">Sin tarifas.</p> : null}
+        {!loading && !loadError && rows.length === 0 ? <p className="pt-3 text-sm text-slate-500">Sin tarifas.</p> : null}
       </Card>
       <form onSubmit={onSubmit}>
         <Card className="grid gap-4 sm:grid-cols-2">
           <Field label="Nombre" value={draft.nombre} onChange={(e) => setDraft({ ...draft, nombre: e.target.value })} required />
           <Field label="Descripción" value={draft.descripcion} onChange={(e) => setDraft({ ...draft, descripcion: e.target.value })} />
-          <Field label="Precio web" type="number" min={0} value={draft.pvp} onChange={(e) => setDraft({ ...draft, pvp: e.target.value })} required />
+          <Field label="Precio web" type="number" min={0} step={1} value={draft.pvp} onChange={(e) => setDraft({ ...draft, pvp: e.target.value })} required />
           <Field
             label="Precio taquilla"
             type="number"
             min={0}
+            step={1}
             value={draft.pvpBoxOffice}
             onChange={(e) => setDraft({ ...draft, pvpBoxOffice: e.target.value })}
             placeholder="Vacío = precio web"

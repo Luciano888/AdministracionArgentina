@@ -1,3 +1,5 @@
+import type { VenueConfig } from "@/lib/venueConfig";
+
 export type Theme = {
   primary: string;
   primaryDark: string;
@@ -20,6 +22,8 @@ export type Venue = {
   theme: Theme;
   logo: string;
   features: Features;
+  /** Propuesto: reglas propias del recinto. Si no viene, rigen los valores por defecto. */
+  config?: Partial<VenueConfig> | null;
 };
 
 export type AdminSession = {

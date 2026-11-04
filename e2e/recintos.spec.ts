@@ -42,3 +42,13 @@ test("la plataforma crea un recinto y edita sus datos", async ({ page }) => {
   await page.getByRole("button", { name: "Guardar" }).click();
   await expect(page.getByText("Ya existe un recinto con ese id o slug")).toBeVisible();
 });
+
+test("el id y el slug del recinto se normalizan al escribir", async ({ page }) => {
+  await login(page, PLATFORM.email, PLATFORM.password);
+  await expect(page).toHaveURL(/\/recintos$/);
+  await page.goto("/recintos/nuevo");
+  await page.getByLabel("Id de conexión").fill("Centro Norte 03");
+  await expect(page.getByLabel("Id de conexión")).toHaveValue("centronorte03");
+  await page.getByLabel("Slug").fill("Centro_Norte!");
+  await expect(page.getByLabel("Slug")).toHaveValue("centronorte");
+});

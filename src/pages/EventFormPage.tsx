@@ -4,9 +4,11 @@ import { EventCover } from "@/components/EventCover";
 import { DurationField, HelpMark, ImageField, LocationField } from "@/components/EventFormFields";
 import { Area, Banner, Card, Field, GhostButton, PageTitle, PrimaryButton, SelectField, Spinner } from "@/components/ui";
 import { adminFetch } from "@/lib/api";
-import { CATEGORIAS, DESCRIPCION_LARGA_MAX, DESCRIPCION_MAX, formatDuracion, parseDuracion, TEXTO_AMIGABLE_AYUDA } from "@/lib/eventFields";
+import { formatDuracion, parseDuracion, TEXTO_AMIGABLE_AYUDA } from "@/lib/eventFields";
+import { useConfirm, useToast } from "@/lib/feedback";
 import { useAdmin } from "@/lib/session";
 import { useAdminQuery } from "@/lib/useAdminQuery";
+import { useVenueConfig } from "@/lib/venueConfig";
 import { GRADIENTS, ICONS } from "@/lib/visual";
 import type { ShowEvent } from "@/types";
 
@@ -14,6 +16,9 @@ export function EventFormPage() {
   const { tenantId = "", eventId } = useParams();
   const token = useAdmin((s) => s.session)!.token;
   const navigate = useNavigate();
+  const { config } = useVenueConfig();
+  const confirm = useConfirm();
+  const toast = useToast();
   const creating = !eventId;
   const [titulo, setTitulo] = useState("");
   const [categoria, setCategoria] = useState("");
@@ -83,6 +88,7 @@ export function EventFormPage() {
           imagen,
         },
       });
+      toast("Evento guardado");
       navigate(`/recintos/${tenantId}/eventos/${saved.id}/tarifas`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "No se pudo guardar");
@@ -92,11 +98,13 @@ export function EventFormPage() {
   }
 
   async function remove() {
-    if (!eventId || !confirm("¿Borrar este evento? Solo se puede si no tiene ventas.")) return;
+    if (!eventId) return;
+    if (!(await confirm({ title: "¿Borrar este evento?", message: "Solo se puede si no tiene ventas." }))) return;
     setBusy(true);
     setError("");
     try {
       await adminFetch("Admin/Events", { method: "DELETE", token, query: { id: eventId } });
+      toast("Evento borrado");
       navigate(`/recintos/${tenantId}/eventos`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "No se pudo borrar");
@@ -104,7 +112,7 @@ export function EventFormPage() {
     }
   }
 
-  const categorias = categoria && !CATEGORIAS.includes(categoria as (typeof CATEGORIAS)[number]) ? [categoria, ...CATEGORIAS] : CATEGORIAS;
+  const categorias = categoria && !config.categorias.includes(categoria) ? [categoria, ...config.categorias] : config.categorias;
   const duracionVista = formatDuracion(libre, horas, minutos);
 
   if (!creating && loading) {
@@ -133,13 +141,13 @@ export function EventFormPage() {
           <Area
             label="Descripción corta"
             value={descripcion}
-            maxLength={DESCRIPCION_MAX}
+            maxLength={config.descripcionMax}
             onChange={(e) => setDescripcion(e.target.value)}
           />
           <Area
             label="Descripción larga"
             value={descripcionLarga}
-            maxLength={DESCRIPCION_LARGA_MAX}
+            maxLength={config.descripcionLargaMax}
             onChange={(e) => setDescripcionLarga(e.target.value)}
           />
           <DurationField
@@ -151,7 +159,7 @@ export function EventFormPage() {
             onMinutos={setMinutos}
           />
           {duracionVista && !libre ? <p className="-mt-2 text-xs text-slate-500">Se guarda como {duracionVista}.</p> : null}
-          <LocationField value={ubicacion} onChange={setUbicacion} />
+          <LocationField value={ubicacion} onChange={setUbicacion} country={config.geocoderCountry} />
           <Field
             label="Texto amigable"
             labelExtra={<HelpMark />}
@@ -167,7 +175,7 @@ export function EventFormPage() {
               </option>
             ))}
           </SelectField>
-          <ImageField imagen={imagen} onChange={setImagen} onError={setError} />
+          <ImageField imagen={imagen} onChange={setImagen} onError={setError} maxBytes={config.imagenMaxBytes} />
           {error || loadProblem ? <Banner>{error || loadProblem}</Banner> : null}
           <div className="flex gap-3">
             <PrimaryButton type="submit" disabled={busy}>

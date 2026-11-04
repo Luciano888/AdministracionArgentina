@@ -17,9 +17,10 @@ Documents/
 
 ## Arranque
 
-Hace falta Node 20+ y la API de Venta Online en el puerto 3000, con Postgres (`npm run db:push` y `npm run db:seed` en ese repo).
+Hace falta Node 22 (está en `.nvmrc`: `nvm use`) y la API de Venta Online en el puerto 3000, con su base (`npm run db:push` y `npm run db:seed` en ese repo).
 
 ```bash
+nvm use
 npm install
 npm run dev
 ```
@@ -33,21 +34,29 @@ Panel: [http://localhost:5174](http://localhost:5174)
 | `npm run dev` | Panel en el puerto 5174, con proxy de `/api` a `VO_API_ORIGIN` (por defecto `:3000`) |
 | `npm run build` | Chequeo de tipos (`tsc -b`) y build de producción en `dist/` |
 | `npm run lint` | ESLint |
+| `npm test` | Tests unitarios (Vitest + jsdom, `src/**/*.test.ts(x)`) |
 | `npm run test:e2e` | Playwright (necesita el repo hermano y su base de datos) |
 
-La CI (`.github/workflows/ci.yml`) corre `lint` y `build` en cada push y PR. Los E2E no corren ahí.
+La CI (`.github/workflows/ci.yml`) corre `lint`, `test` y `build` en cada push y PR. Los E2E no corren ahí. Dependabot propone actualizaciones de dependencias y de Actions una vez por semana.
 
 ## Estructura
 
 ```text
 src/
-├── components/   Shell (layout + menú), ui.tsx (botones, campos, Spinner), formulario de evento
-├── lib/          api.ts (fetch a Admin/*), useAdminQuery.ts (GET con spinner/error/recarga), session.ts (sesión en sessionStorage), helpers
+├── components/   Shell (layout + menú), ui.tsx (botones, campos, Spinner), Feedback.tsx (diálogo de confirmación y avisos), formulario de evento
+├── lib/          api.ts (fetch a Admin/*), useAdminQuery.ts (GET con spinner/error/recarga), session.ts (sesión en sessionStorage),
+│                 venueConfig.ts (reglas por recinto), feedback.ts (useConfirm/useToast), sessionDates.ts, format.ts
 ├── pages/        una página por ruta (recintos, eventos, tarifas, sesiones, cajeros, terminales, entradas)
 └── types.ts      tipos del contrato
 e2e/              caminos del panel con Playwright
 docs/admin/       contrato con Venta Online
 ```
+
+### Multi-tenant
+
+Cada recinto es un cliente. Las reglas que pueden cambiar entre clientes (categorías, topes de texto e imagen, moneda, idioma y país del mapa) se leen con `useVenueConfig()` y nunca están fijas en las páginas. Hoy la API no manda esa config y rigen los valores por defecto de `src/lib/venueConfig.ts`. La propuesta para la API está en [docs/admin/CONTRATO-API.md](docs/admin/CONTRATO-API.md#propuesto-config-por-recinto).
+
+Para confirmar un borrado se usa `useConfirm()`, no `window.confirm`. Para avisar que algo se guardó, `useToast()`.
 
 ## Tests
 
@@ -58,7 +67,7 @@ npx playwright install chromium
 npm run test:e2e
 ```
 
-Para cargar datos, las páginas usan `useAdminQuery` y cada sección muestra un `Spinner` mientras espera. En los tests, ese spinner se busca con `spinner(page, "Cargando …")` de `e2e/helpers.ts`, porque `getByRole("status", { name })` nunca encuentra nada.
+Para cargar datos, las páginas usan `useAdminQuery` y cada sección muestra un `Spinner` mientras espera. En los tests, ese spinner se busca con `spinner(page, "Cargando …")` de `e2e/helpers.ts`. Los borrados se confirman con `confirmDelete(page)`.
 
 | Spec | Qué cubre |
 |------|-----------|

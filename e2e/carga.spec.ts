@@ -57,6 +57,7 @@ for (const list of LISTS) {
       await onGet(page, list.endpoint, (route) => route.fulfill({ status: 500, json: { error: "Falla simulada" } }));
       await page.goto(list.path);
       await expect(page.getByText("Falla simulada")).toBeVisible();
+      await expect(page.getByText(list.empty)).toHaveCount(0);
       await expect(spinner(page.getByRole("main"), list.loading)).toHaveCount(0);
     });
 

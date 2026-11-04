@@ -1,14 +1,15 @@
 import { type FormEvent, useState } from "react";
 import { useParams } from "react-router-dom";
 import { Banner, Card, Field, PageTitle, PrimaryButton, Spinner } from "@/components/ui";
-import { formatARS, formatWhen } from "@/lib/format";
 import { useAdminQuery } from "@/lib/useAdminQuery";
+import { useVenueConfig } from "@/lib/venueConfig";
 import type { IssuedOrder } from "@/types";
 
 const CHANNEL: Record<string, string> = { web: "Web", box_office: "Taquilla" };
 
 export function TicketsPage() {
   const { tenantId = "" } = useParams();
+  const { money, when } = useVenueConfig();
   const [q, setQ] = useState("");
   const [search, setSearch] = useState("");
   const {
@@ -41,23 +42,23 @@ export function TicketsPage() {
             <div className="flex flex-wrap items-baseline justify-between gap-2">
               <h2 className="font-semibold">{order.localizador}</h2>
               <p className="text-sm text-slate-500">
-                {CHANNEL[order.canal] ?? order.canal} · {order.estado} · {formatWhen(order.fecha)}
+                {CHANNEL[order.canal] ?? order.canal} · {order.estado} · {when(order.fecha)}
               </p>
             </div>
             <p className="mt-1 text-sm text-slate-600">
-              {order.titulo || "Sin título"} · {order.email} · {formatARS(order.total)}
+              {order.titulo || "Sin título"} · {order.email} · {money(order.total)}
             </p>
             <ul className="mt-3 space-y-1 text-sm text-slate-500">
               {order.tickets.map((ticket) => (
                 <li key={ticket.code}>
-                  {ticket.code} · {ticket.tariffName || "Entrada"} · {ticket.status} · {formatARS(ticket.price)}
+                  {ticket.code} · {ticket.tariffName || "Entrada"} · {ticket.status} · {money(ticket.price)}
                 </li>
               ))}
             </ul>
           </Card>
         ))}
         {loading ? <Spinner label="Cargando entradas" className="py-4" /> : null}
-        {!loading && rows.length === 0 ? <p className="text-sm text-slate-500">No hay entradas para mostrar.</p> : null}
+        {!loading && !error && rows.length === 0 ? <p className="text-sm text-slate-500">No hay entradas para mostrar.</p> : null}
       </div>
     </div>
   );
