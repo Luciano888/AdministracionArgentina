@@ -16,5 +16,6 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run lint
+      - run: npm test
       - run: npm run build
       # Los E2E (npm run test:e2e) no corren acá: necesitan VentaOnlineArgentina y Postgres.

@@ -3,49 +3,13 @@ import { Link, useParams } from "react-router-dom";
 import { Banner, Card, Field, GhostButton, PageTitle, PrimaryButton, SelectField, Spinner } from "@/components/ui";
 import { adminFetch } from "@/lib/api";
 import { useAdmin } from "@/lib/session";
+import { dayKey, formatFecha, monthKey, monthLabel, weekLabel, weekStart } from "@/lib/sessionDates";
 import { useAdminQuery } from "@/lib/useAdminQuery";
 import type { ShowSession } from "@/types";
 
 const EMPTY = { id: "", fecha: "", hora: "18:00", cupo: "40" };
 const NO_ROWS: ShowSession[] = [];
-
-function parseDay(fecha: string) {
-  const [year, month, day] = fecha.split("-").map(Number);
-  return new Date(year, (month || 1) - 1, day || 1);
-}
-
-function dayKey(date: Date) {
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${date.getFullYear()}-${month}-${day}`;
-}
-
-function monthKey(fecha: string) {
-  return fecha.slice(0, 7);
-}
-
-function weekStart(fecha: string) {
-  const date = parseDay(fecha);
-  const weekday = date.getDay();
-  date.setDate(date.getDate() + (weekday === 0 ? -6 : 1 - weekday));
-  return dayKey(date);
-}
-
-function monthLabel(key: string) {
-  return new Intl.DateTimeFormat("es-AR", { month: "long", year: "numeric" }).format(parseDay(`${key}-01`));
-}
-
-function weekLabel(start: string) {
-  const from = parseDay(start);
-  const to = new Date(from);
-  to.setDate(from.getDate() + 6);
-  const format = new Intl.DateTimeFormat("es-AR", { day: "numeric", month: "short" });
-  return `${format.format(from)} – ${format.format(to)}`;
-}
-
-function formatFecha(fecha: string) {
-  return new Intl.DateTimeFormat("es-AR", { weekday: "short", day: "numeric", month: "short" }).format(parseDay(fecha));
-}
+const LOCALE = "es-AR";
 
 export function SessionsPage() {
   const { tenantId = "", eventId = "" } = useParams();
@@ -120,7 +84,7 @@ export function SessionsPage() {
           >
             {months.map((key) => (
               <option key={key} value={key}>
-                {monthLabel(key)}
+                {monthLabel(key, LOCALE)}
               </option>
             ))}
           </SelectField>
@@ -132,7 +96,7 @@ export function SessionsPage() {
             <option value="">Todas las semanas del mes</option>
             {weeks.map((key) => (
               <option key={key} value={key}>
-                {weekLabel(key)}
+                {weekLabel(key, LOCALE)}
               </option>
             ))}
           </SelectField>
@@ -152,7 +116,7 @@ export function SessionsPage() {
           <tbody>
             {visible.map((row) => (
               <tr key={row.id} className="border-t border-slate-100">
-                <td className="py-3">{formatFecha(row.fecha)}</td>
+                <td className="py-3">{formatFecha(row.fecha, LOCALE)}</td>
                 <td>{row.hora}</td>
                 <td>{row.cupo}</td>
                 <td>{row.disponible}</td>
