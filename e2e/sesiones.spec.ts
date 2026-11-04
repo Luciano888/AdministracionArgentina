@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { fieldSelect, loginVenue } from "./helpers";
+import { fieldSelect, loginVenue, spinner } from "./helpers";
 
 test("las sesiones se filtran por mes y por semana", async ({ page }) => {
   await loginVenue(page);
@@ -7,7 +7,7 @@ test("las sesiones se filtran por mes y por semana", async ({ page }) => {
   await tango.getByRole("link", { name: "Sesiones" }).click();
   const months = fieldSelect(page, "Mes");
   await expect(months).toBeVisible({ timeout: 30_000 });
-  await expect(page.getByRole("status", { name: "Cargando sesiones" })).toBeHidden();
+  await expect(spinner(page, "Cargando sesiones")).toBeHidden();
 
   const week = fieldSelect(page, "Semana");
   await expect(week).toBeVisible();
