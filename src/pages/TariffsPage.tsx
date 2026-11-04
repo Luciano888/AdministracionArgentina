@@ -2,6 +2,7 @@ import { type FormEvent, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { Banner, Card, Field, GhostButton, PageTitle, PrimaryButton, Spinner } from "@/components/ui";
 import { adminFetch } from "@/lib/api";
+import { useConfirm, useToast } from "@/lib/feedback";
 import { useAdmin } from "@/lib/session";
 import { useAdminQuery } from "@/lib/useAdminQuery";
 import { useVenueConfig } from "@/lib/venueConfig";
@@ -14,6 +15,8 @@ export function TariffsPage() {
   const token = useAdmin((s) => s.session)!.token;
   const { data: rows = [], loading, error: loadError, reload } = useAdminQuery<Tariff[]>("Admin/Tariffs", { eventId });
   const { money } = useVenueConfig();
+  const confirm = useConfirm();
+  const toast = useToast();
   const [draft, setDraft] = useState(EMPTY);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -37,6 +40,7 @@ export function TariffsPage() {
         },
       });
       setDraft(EMPTY);
+      toast(editing ? "Tarifa actualizada" : "Tarifa guardada");
       reload();
     } catch (err) {
       setError(err instanceof Error ? err.message : "No se pudo guardar");
@@ -46,10 +50,11 @@ export function TariffsPage() {
   }
 
   async function remove(id: number) {
-    if (!confirm("¿Borrar esta tarifa? Solo se puede si no tiene ventas.")) return;
+    if (!(await confirm({ title: "¿Borrar esta tarifa?", message: "Solo se puede si no tiene ventas." }))) return;
     setError("");
     try {
       await adminFetch("Admin/Tariffs", { method: "DELETE", token, query: { id } });
+      toast("Tarifa borrada");
       reload();
     } catch (err) {
       setError(err instanceof Error ? err.message : "No se pudo borrar");
@@ -116,11 +121,12 @@ export function TariffsPage() {
         <Card className="grid gap-4 sm:grid-cols-2">
           <Field label="Nombre" value={draft.nombre} onChange={(e) => setDraft({ ...draft, nombre: e.target.value })} required />
           <Field label="Descripción" value={draft.descripcion} onChange={(e) => setDraft({ ...draft, descripcion: e.target.value })} />
-          <Field label="Precio web" type="number" min={0} value={draft.pvp} onChange={(e) => setDraft({ ...draft, pvp: e.target.value })} required />
+          <Field label="Precio web" type="number" min={0} step={1} value={draft.pvp} onChange={(e) => setDraft({ ...draft, pvp: e.target.value })} required />
           <Field
             label="Precio taquilla"
             type="number"
             min={0}
+            step={1}
             value={draft.pvpBoxOffice}
             onChange={(e) => setDraft({ ...draft, pvpBoxOffice: e.target.value })}
             placeholder="Vacío = precio web"

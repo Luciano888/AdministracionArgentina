@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { acceptDialogs, fieldSelect, loginVenue, removeEventByTitle, stamp, spinner } from "./helpers";
+import { fieldSelect, loginVenue, removeEventByTitle, stamp, spinner, confirmDelete } from "./helpers";
 
 test("el menú del evento explica ficha, tarifas y sesiones", async ({ page }) => {
   await loginVenue(page);
@@ -85,7 +85,6 @@ test("una imagen de más de 900 KB no se acepta", async ({ page }) => {
 });
 
 test("un evento Libre con imagen guarda todo y toma el menor precio de sus tarifas", async ({ page }) => {
-  acceptDialogs(page);
   const mark = stamp();
   const titulo = `Libre ${mark}`;
   await openNewEvent(page);
@@ -106,6 +105,7 @@ test("un evento Libre con imagen guarda todo y toma el menor precio de sus tarif
     await page.getByLabel("Nombre").fill(`Entrada ${mark}`);
     await page.getByLabel("Precio web").fill("2000");
     await page.getByRole("button", { name: "Agregar tarifa" }).click();
+    await expect(page.getByText("Tarifa guardada")).toBeVisible();
     await expect(page.getByRole("row", { name: new RegExp(`Entrada ${mark}`) })).toContainText("Igual que web");
 
     await page.getByLabel("Nombre").fill(`Reducida ${mark}`);
@@ -129,7 +129,6 @@ test("un evento Libre con imagen guarda todo y toma el menor precio de sus tarif
 });
 
 test("se crea un evento, su tarifa y una sesión, y se pueden borrar", async ({ page }) => {
-  acceptDialogs(page);
   const mark = stamp();
   const titulo = `Ensayo ${mark}`;
   const slug = `ensayo-${mark}`;
@@ -163,6 +162,7 @@ test("se crea un evento, su tarifa y una sesión, y se pueden borrar", async ({ 
   await page.getByRole("button", { name: "Actualizar tarifa" }).click();
   await expect(page.getByRole("cell", { name: /1\.800/ })).toBeVisible();
   await page.getByRole("button", { name: "Borrar" }).click();
+  await confirmDelete(page);
   await expect(page.getByText("Sin tarifas.")).toBeVisible();
 
   await page.getByRole("link", { name: "Sesiones Fechas, hora y cupo" }).click();
@@ -185,11 +185,13 @@ test("se crea un evento, su tarifa y una sesión, y se pueden borrar", async ({ 
   await expect(page.getByText("Ya hay una sesión en esa fecha y hora")).toBeVisible();
 
   await page.getByRole("button", { name: "Borrar" }).click();
+  await confirmDelete(page);
   await expect(page.getByText("Sin sesiones publicadas.")).toBeVisible();
 
   await page.getByRole("link", { name: "Ficha Datos de este evento" }).click();
   await expect(page.getByLabel("Título")).toHaveValue(titulo);
   await page.getByRole("button", { name: "Borrar" }).click();
+  await confirmDelete(page);
   await expect(page.getByRole("heading", { name: "Eventos" })).toBeVisible();
   await expect(spinner(page, "Cargando eventos")).toBeHidden();
   await expect(page.getByRole("heading", { name: titulo })).toHaveCount(0);

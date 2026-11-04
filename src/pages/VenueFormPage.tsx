@@ -2,17 +2,26 @@ import { type FormEvent, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Banner, Card, Field, PageTitle, PrimaryButton, Spinner } from "@/components/ui";
 import { adminFetch } from "@/lib/api";
+import { useToast } from "@/lib/feedback";
 import { useAdmin } from "@/lib/session";
 import { useAdminQuery } from "@/lib/useAdminQuery";
 import type { Features, Theme, Venue } from "@/types";
 
 const EMPTY_THEME: Theme = { primary: "#2563eb", primaryDark: "#1d4ed8", primaryForeground: "#ffffff" };
 const EMPTY_FEATURES: Features = { nominacion: false, factura: false, login: true };
+/** Misma regla que la API para id y slug de recinto. */
+const SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+const SLUG_HELP = "Minúsculas, números y guiones. Ejemplo: centro-norte.";
+
+function toSlug(value: string) {
+  return value.toLowerCase().replace(/[^a-z0-9-]/g, "");
+}
 
 export function VenueFormPage() {
   const { tenantId } = useParams();
   const session = useAdmin((s) => s.session)!;
   const navigate = useNavigate();
+  const toast = useToast();
   const creating = !tenantId;
   const [id, setId] = useState("");
   const [slug, setSlug] = useState("");
@@ -46,6 +55,10 @@ export function VenueFormPage() {
 
   async function onSubmit(event: FormEvent) {
     event.preventDefault();
+    if (creating && (!SLUG.test(id) || !SLUG.test(slug))) {
+      setError("El id y el slug solo admiten minúsculas, números y guiones, sin guiones al principio ni al final");
+      return;
+    }
     setBusy(true);
     setError("");
     const body = { id: id || tenantId, slug, name, shortName, tagline, city, logo, theme, features };
@@ -55,6 +68,7 @@ export function VenueFormPage() {
         token: session.token,
         body,
       });
+      toast("Recinto guardado");
       navigate(`/recintos/${saved.id}/eventos`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "No se pudo guardar");
@@ -82,8 +96,24 @@ export function VenueFormPage() {
       <Card className="space-y-4">
         {creating ? (
           <>
-            <Field label="Id de conexión" value={id} onChange={(e) => setId(e.target.value)} placeholder="ccs-003" required />
-            <Field label="Slug" value={slug} onChange={(e) => setSlug(e.target.value)} placeholder="centro-norte" required />
+            <Field
+              label="Id de conexión"
+              value={id}
+              onChange={(e) => setId(toSlug(e.target.value))}
+              placeholder="ccs-003"
+              pattern={SLUG.source}
+              title={SLUG_HELP}
+              required
+            />
+            <Field
+              label="Slug"
+              value={slug}
+              onChange={(e) => setSlug(toSlug(e.target.value))}
+              placeholder="centro-norte"
+              pattern={SLUG.source}
+              title={SLUG_HELP}
+              required
+            />
           </>
         ) : (
           <p className="text-sm text-slate-500">

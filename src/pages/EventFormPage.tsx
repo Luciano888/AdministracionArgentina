@@ -5,6 +5,7 @@ import { DurationField, HelpMark, ImageField, LocationField } from "@/components
 import { Area, Banner, Card, Field, GhostButton, PageTitle, PrimaryButton, SelectField, Spinner } from "@/components/ui";
 import { adminFetch } from "@/lib/api";
 import { formatDuracion, parseDuracion, TEXTO_AMIGABLE_AYUDA } from "@/lib/eventFields";
+import { useConfirm, useToast } from "@/lib/feedback";
 import { useAdmin } from "@/lib/session";
 import { useAdminQuery } from "@/lib/useAdminQuery";
 import { useVenueConfig } from "@/lib/venueConfig";
@@ -16,6 +17,8 @@ export function EventFormPage() {
   const token = useAdmin((s) => s.session)!.token;
   const navigate = useNavigate();
   const { config } = useVenueConfig();
+  const confirm = useConfirm();
+  const toast = useToast();
   const creating = !eventId;
   const [titulo, setTitulo] = useState("");
   const [categoria, setCategoria] = useState("");
@@ -85,6 +88,7 @@ export function EventFormPage() {
           imagen,
         },
       });
+      toast("Evento guardado");
       navigate(`/recintos/${tenantId}/eventos/${saved.id}/tarifas`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "No se pudo guardar");
@@ -94,11 +98,13 @@ export function EventFormPage() {
   }
 
   async function remove() {
-    if (!eventId || !confirm("¿Borrar este evento? Solo se puede si no tiene ventas.")) return;
+    if (!eventId) return;
+    if (!(await confirm({ title: "¿Borrar este evento?", message: "Solo se puede si no tiene ventas." }))) return;
     setBusy(true);
     setError("");
     try {
       await adminFetch("Admin/Events", { method: "DELETE", token, query: { id: eventId } });
+      toast("Evento borrado");
       navigate(`/recintos/${tenantId}/eventos`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "No se pudo borrar");

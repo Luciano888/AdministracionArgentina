@@ -2,6 +2,7 @@ import { type FormEvent, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { Banner, Card, Field, GhostButton, PageTitle, PrimaryButton, SelectField, Spinner } from "@/components/ui";
 import { adminFetch } from "@/lib/api";
+import { useConfirm, useToast } from "@/lib/feedback";
 import { useAdmin } from "@/lib/session";
 import { dayKey, formatFecha, monthKey, monthLabel, weekLabel, weekStart } from "@/lib/sessionDates";
 import { useAdminQuery } from "@/lib/useAdminQuery";
@@ -16,6 +17,8 @@ export function SessionsPage() {
   const token = useAdmin((s) => s.session)!.token;
   const { data: rows = NO_ROWS, loading, error: loadError, reload } = useAdminQuery<ShowSession[]>("Admin/Sessions", { eventId });
   const { config } = useVenueConfig();
+  const confirm = useConfirm();
+  const toast = useToast();
   const [draft, setDraft] = useState(EMPTY);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -32,6 +35,7 @@ export function SessionsPage() {
         token,
         body: { id: draft.id || undefined, eventId, fecha: draft.fecha, hora: draft.hora, cupo: Number(draft.cupo) },
       });
+      toast(draft.id ? "Sesión actualizada" : "Sesión publicada");
       setDraft(EMPTY);
       reload();
     } catch (err) {
@@ -42,10 +46,11 @@ export function SessionsPage() {
   }
 
   async function remove(id: string) {
-    if (!confirm("¿Borrar esta sesión? Solo se puede si no tiene ventas ni reservas.")) return;
+    if (!(await confirm({ title: "¿Borrar esta sesión?", message: "Solo se puede si no tiene ventas ni reservas." }))) return;
     setError("");
     try {
       await adminFetch("Admin/Sessions", { method: "DELETE", token, query: { id } });
+      toast("Sesión borrada");
       reload();
     } catch (err) {
       setError(err instanceof Error ? err.message : "No se pudo borrar");
@@ -152,7 +157,7 @@ export function SessionsPage() {
         <Card className="grid gap-4 sm:grid-cols-3">
           <Field label="Fecha" type="date" value={draft.fecha} onChange={(e) => setDraft({ ...draft, fecha: e.target.value })} required />
           <Field label="Hora" type="time" value={draft.hora} onChange={(e) => setDraft({ ...draft, hora: e.target.value })} required />
-          <Field label="Cupo" type="number" min={0} value={draft.cupo} onChange={(e) => setDraft({ ...draft, cupo: e.target.value })} required />
+          <Field label="Cupo" type="number" min={0} step={1} value={draft.cupo} onChange={(e) => setDraft({ ...draft, cupo: e.target.value })} required />
           <div className="flex gap-3 sm:col-span-3">
             <PrimaryButton type="submit" disabled={busy}>
               {draft.id ? "Actualizar sesión" : "Publicar sesión"}

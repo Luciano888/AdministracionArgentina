@@ -2,6 +2,7 @@ import { type FormEvent, useState } from "react";
 import { useParams } from "react-router-dom";
 import { Banner, Card, Field, GhostButton, PageTitle, PrimaryButton, Spinner } from "@/components/ui";
 import { adminFetch } from "@/lib/api";
+import { useConfirm, useToast } from "@/lib/feedback";
 import { useAdmin } from "@/lib/session";
 import { useAdminQuery } from "@/lib/useAdminQuery";
 import type { Terminal } from "@/types";
@@ -12,16 +13,19 @@ export function TerminalsPage() {
   const { tenantId = "" } = useParams();
   const token = useAdmin((s) => s.session)!.token;
   const { data: rows = [], loading, error: loadError, reload } = useAdminQuery<Terminal[]>("Admin/Terminals", { tenantId });
+  const confirm = useConfirm();
+  const toast = useToast();
   const [draft, setDraft] = useState(EMPTY);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
 
   async function remove(id: string) {
-    if (!confirm("¿Borrar esta terminal? Solo se puede si no tiene turnos ni ventas.")) return;
+    if (!(await confirm({ title: "¿Borrar esta terminal?", message: "Solo se puede si no tiene turnos ni ventas." }))) return;
     setError("");
     try {
       await adminFetch("Admin/Terminals", { method: "DELETE", token, query: { id } });
       if (draft.id === id) setDraft(EMPTY);
+      toast("Terminal borrada");
       reload();
     } catch (err) {
       setError(err instanceof Error ? err.message : "No se pudo borrar");
@@ -39,6 +43,7 @@ export function TerminalsPage() {
         body: { id: draft.id || undefined, tenantId, code: draft.code, name: draft.name },
       });
       setDraft(EMPTY);
+      toast("Terminal guardada");
       reload();
     } catch (err) {
       setError(err instanceof Error ? err.message : "No se pudo guardar");

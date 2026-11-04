@@ -33,8 +33,11 @@ export async function loginVenue(page: Page) {
   await expect(page.getByRole("heading", { name: "Eventos" })).toBeVisible();
 }
 
-export function acceptDialogs(page: Page) {
-  page.on("dialog", (dialog) => dialog.accept());
+/** Confirma el diálogo propio del panel («¿Borrar …?») y espera a que se cierre. */
+export async function confirmDelete(page: Page) {
+  const dialog = page.getByRole("dialog");
+  await dialog.getByRole("button", { name: "Borrar" }).click();
+  await expect(dialog).toBeHidden();
 }
 
 async function venueToken(request: APIRequestContext) {
