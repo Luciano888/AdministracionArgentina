@@ -11,11 +11,6 @@ export default defineConfig([
     files: ["src/**/*.{ts,tsx}"],
     extends: [js.configs.recommended, tseslint.configs.recommended, reactHooks.configs.flat.recommended, reactRefresh.configs.vite],
     languageOptions: { ecmaVersion: 2022, globals: globals.browser },
-    rules: {
-      // Las páginas cargan datos con useEffect + setState. Queda como aviso hasta
-      // pasar esa carga a un hook común (o TanStack Query); luego volver a "error".
-      "react-hooks/set-state-in-effect": "warn",
-    },
   },
   {
     files: ["e2e/**/*.ts", "*.config.ts"],
