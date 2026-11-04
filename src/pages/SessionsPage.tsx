@@ -5,16 +5,17 @@ import { adminFetch } from "@/lib/api";
 import { useAdmin } from "@/lib/session";
 import { dayKey, formatFecha, monthKey, monthLabel, weekLabel, weekStart } from "@/lib/sessionDates";
 import { useAdminQuery } from "@/lib/useAdminQuery";
+import { useVenueConfig } from "@/lib/venueConfig";
 import type { ShowSession } from "@/types";
 
 const EMPTY = { id: "", fecha: "", hora: "18:00", cupo: "40" };
 const NO_ROWS: ShowSession[] = [];
-const LOCALE = "es-AR";
 
 export function SessionsPage() {
   const { tenantId = "", eventId = "" } = useParams();
   const token = useAdmin((s) => s.session)!.token;
   const { data: rows = NO_ROWS, loading, error: loadError, reload } = useAdminQuery<ShowSession[]>("Admin/Sessions", { eventId });
+  const { config } = useVenueConfig();
   const [draft, setDraft] = useState(EMPTY);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -84,7 +85,7 @@ export function SessionsPage() {
           >
             {months.map((key) => (
               <option key={key} value={key}>
-                {monthLabel(key, LOCALE)}
+                {monthLabel(key, config.locale)}
               </option>
             ))}
           </SelectField>
@@ -96,7 +97,7 @@ export function SessionsPage() {
             <option value="">Todas las semanas del mes</option>
             {weeks.map((key) => (
               <option key={key} value={key}>
-                {weekLabel(key, LOCALE)}
+                {weekLabel(key, config.locale)}
               </option>
             ))}
           </SelectField>
@@ -116,7 +117,7 @@ export function SessionsPage() {
           <tbody>
             {visible.map((row) => (
               <tr key={row.id} className="border-t border-slate-100">
-                <td className="py-3">{formatFecha(row.fecha, LOCALE)}</td>
+                <td className="py-3">{formatFecha(row.fecha, config.locale)}</td>
                 <td>{row.hora}</td>
                 <td>{row.cupo}</td>
                 <td>{row.disponible}</td>

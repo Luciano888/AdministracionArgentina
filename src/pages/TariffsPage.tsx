@@ -2,9 +2,9 @@ import { type FormEvent, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { Banner, Card, Field, GhostButton, PageTitle, PrimaryButton, Spinner } from "@/components/ui";
 import { adminFetch } from "@/lib/api";
-import { formatARS } from "@/lib/format";
 import { useAdmin } from "@/lib/session";
 import { useAdminQuery } from "@/lib/useAdminQuery";
+import { useVenueConfig } from "@/lib/venueConfig";
 import type { Tariff } from "@/types";
 
 const EMPTY = { id: 0, nombre: "", pvp: "", pvpBoxOffice: "", descripcion: "" };
@@ -13,6 +13,7 @@ export function TariffsPage() {
   const { tenantId = "", eventId = "" } = useParams();
   const token = useAdmin((s) => s.session)!.token;
   const { data: rows = [], loading, error: loadError, reload } = useAdminQuery<Tariff[]>("Admin/Tariffs", { eventId });
+  const { money } = useVenueConfig();
   const [draft, setDraft] = useState(EMPTY);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -82,8 +83,8 @@ export function TariffsPage() {
                   <p className="font-medium">{row.nombre}</p>
                   <p className="text-slate-500">{row.descripcion}</p>
                 </td>
-                <td>{formatARS(row.pvp)}</td>
-                <td>{row.pvpBoxOffice == null ? "Igual que web" : formatARS(row.pvpBoxOffice)}</td>
+                <td>{money(row.pvp)}</td>
+                <td>{row.pvpBoxOffice == null ? "Igual que web" : money(row.pvpBoxOffice)}</td>
                 <td className="text-right">
                   <button
                     type="button"
