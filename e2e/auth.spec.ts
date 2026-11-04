@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { CASHIER, login, loginVenue, PLATFORM, VENUE_ADMIN } from "./helpers";
+import { adminHeaders, CASHIER, login, loginVenue, PLATFORM, VENUE_ADMIN } from "./helpers";
 
 for (const path of [
   "/recintos",
@@ -45,6 +45,39 @@ test("el admin de un recinto solo ve el suyo", async ({ page }) => {
 
   await page.goto("/recintos/mdr-002/eventos");
   await expect(page).toHaveURL(/\/recintos\/ccs-001\/eventos$/);
+});
+
+test("un token vencido vuelve al login", async ({ page }) => {
+  await loginVenue(page);
+  await page.evaluate(() => {
+    const raw = sessionStorage.getItem("admin-session");
+    if (!raw) throw new Error("No hay sesión guardada");
+    const stored = JSON.parse(raw);
+    stored.state.session.token = "token-vencido-e2e";
+    sessionStorage.setItem("admin-session", JSON.stringify(stored));
+  });
+  await page.reload();
+  await expect(page).toHaveURL(/\/login$/);
+  await expect(page.getByRole("heading", { name: "Administración" })).toBeVisible();
+});
+
+test("la API no deja a un admin salir de su recinto ni abrir caja", async ({ page }) => {
+  const headers = await adminHeaders(page.request);
+
+  const otherVenue = await page.request.get("/api/Admin/Events?tenantId=mdr-002", { headers });
+  expect(otherVenue.status()).toBe(403);
+
+  const newVenue = await page.request.post("/api/Admin/Tenants", {
+    headers,
+    data: { id: "e2e-no-permitido", slug: "e2e-no-permitido", name: "No", shortName: "No" },
+  });
+  expect(newVenue.status()).toBe(403);
+
+  const boxOffice = await page.request.post("/api/Taquilla/Login", {
+    headers: { "x-conexion-id": "ccs-001" },
+    data: VENUE_ADMIN,
+  });
+  expect(boxOffice.status()).toBe(403);
 });
 
 test("salir cierra la sesión", async ({ page }) => {

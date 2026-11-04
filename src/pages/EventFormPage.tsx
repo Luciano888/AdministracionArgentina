@@ -1,4 +1,4 @@
-import { type FormEvent, useEffect, useState } from "react";
+import { type FormEvent, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { EventCover } from "@/components/EventCover";
 import { DurationField, HelpMark, ImageField, LocationField } from "@/components/EventFormFields";
@@ -6,6 +6,7 @@ import { Area, Banner, Card, Field, GhostButton, PageTitle, PrimaryButton, Selec
 import { adminFetch } from "@/lib/api";
 import { CATEGORIAS, DESCRIPCION_LARGA_MAX, DESCRIPCION_MAX, formatDuracion, parseDuracion, TEXTO_AMIGABLE_AYUDA } from "@/lib/eventFields";
 import { useAdmin } from "@/lib/session";
+import { useAdminQuery } from "@/lib/useAdminQuery";
 import { GRADIENTS, ICONS } from "@/lib/visual";
 import type { ShowEvent } from "@/types";
 
@@ -29,48 +30,29 @@ export function EventFormPage() {
   const [imagen, setImagen] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
-  const [loading, setLoading] = useState(Boolean(eventId));
+  const { data: rows, loading, error: loadError } = useAdminQuery<ShowEvent[]>("Admin/Events", { tenantId }, { enabled: !creating });
+  const loaded = !creating && !loading && rows ? (rows.find((row) => row.id === eventId) ?? null) : undefined;
+  const [filledFrom, setFilledFrom] = useState<ShowEvent | null | undefined>(undefined);
 
-  useEffect(() => {
-    if (!eventId) {
-      setLoading(false);
-      return;
-    }
-    let cancelled = false;
-    setLoading(true);
-    adminFetch<ShowEvent[]>("Admin/Events", { token, query: { tenantId } })
-      .then((rows) => {
-        if (cancelled) return;
-        const event = rows.find((row) => row.id === eventId);
-        if (!event) {
-          setError("Evento no encontrado");
-          return;
-        }
-        const duracion = parseDuracion(event.duracion);
-        setTitulo(event.titulo);
-        setCategoria(event.categoria);
-        setDescripcion(event.descripcion);
-        setDescripcionLarga(event.descripcionLarga);
-        setLibre(duracion.libre);
-        setHoras(duracion.horas);
-        setMinutos(duracion.minutos);
-        setUbicacion(event.ubicacion);
-        setTextoAmigable(event.textoAmigable);
-        setMinimoPrecio(String(event.minimoPrecio));
-        setIcon(event.icon);
-        setGradient(event.gradient || GRADIENTS[0]);
-        setImagen(event.imagen || "");
-      })
-      .catch((err) => {
-        if (!cancelled) setError(err instanceof Error ? err.message : "No se pudo cargar");
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [eventId, tenantId, token]);
+  // Al llegar el evento se copia una vez al formulario (ajuste de estado en el render, sin efecto).
+  if (loaded && loaded !== filledFrom) {
+    setFilledFrom(loaded);
+    const duracion = parseDuracion(loaded.duracion);
+    setTitulo(loaded.titulo);
+    setCategoria(loaded.categoria);
+    setDescripcion(loaded.descripcion);
+    setDescripcionLarga(loaded.descripcionLarga);
+    setLibre(duracion.libre);
+    setHoras(duracion.horas);
+    setMinutos(duracion.minutos);
+    setUbicacion(loaded.ubicacion);
+    setTextoAmigable(loaded.textoAmigable);
+    setMinimoPrecio(String(loaded.minimoPrecio));
+    setIcon(loaded.icon);
+    setGradient(loaded.gradient || GRADIENTS[0]);
+    setImagen(loaded.imagen || "");
+  }
+  const loadProblem = loadError || (loaded === null ? "Evento no encontrado" : "");
 
   async function onSubmit(event: FormEvent) {
     event.preventDefault();
@@ -186,7 +168,7 @@ export function EventFormPage() {
             ))}
           </SelectField>
           <ImageField imagen={imagen} onChange={setImagen} onError={setError} />
-          {error ? <Banner>{error}</Banner> : null}
+          {error || loadProblem ? <Banner>{error || loadProblem}</Banner> : null}
           <div className="flex gap-3">
             <PrimaryButton type="submit" disabled={busy}>
               {busy ? "Guardando…" : "Guardar"}

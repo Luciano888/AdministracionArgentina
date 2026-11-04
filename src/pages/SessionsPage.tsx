@@ -1,11 +1,13 @@
-import { type FormEvent, useEffect, useMemo, useState } from "react";
+import { type FormEvent, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { Banner, Card, Field, GhostButton, PageTitle, PrimaryButton, SelectField, Spinner } from "@/components/ui";
 import { adminFetch } from "@/lib/api";
 import { useAdmin } from "@/lib/session";
+import { useAdminQuery } from "@/lib/useAdminQuery";
 import type { ShowSession } from "@/types";
 
 const EMPTY = { id: "", fecha: "", hora: "18:00", cupo: "40" };
+const NO_ROWS: ShowSession[] = [];
 
 function parseDay(fecha: string) {
   const [year, month, day] = fecha.split("-").map(Number);
@@ -48,26 +50,12 @@ function formatFecha(fecha: string) {
 export function SessionsPage() {
   const { tenantId = "", eventId = "" } = useParams();
   const token = useAdmin((s) => s.session)!.token;
-  const [rows, setRows] = useState<ShowSession[]>([]);
+  const { data: rows = NO_ROWS, loading, error: loadError, reload } = useAdminQuery<ShowSession[]>("Admin/Sessions", { eventId });
   const [draft, setDraft] = useState(EMPTY);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
-  const [loading, setLoading] = useState(true);
   const [month, setMonth] = useState<string | null>(null);
   const [week, setWeek] = useState<string | null>(null);
-
-  function load() {
-    setLoading(true);
-    return adminFetch<ShowSession[]>("Admin/Sessions", { token, query: { eventId } })
-      .then(setRows)
-      .catch((err) => setError(err instanceof Error ? err.message : "No se pudieron cargar las sesiones"))
-      .finally(() => setLoading(false));
-  }
-
-  useEffect(() => {
-    load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [eventId, token]);
 
   async function onSubmit(event: FormEvent) {
     event.preventDefault();
@@ -80,7 +68,7 @@ export function SessionsPage() {
         body: { id: draft.id || undefined, eventId, fecha: draft.fecha, hora: draft.hora, cupo: Number(draft.cupo) },
       });
       setDraft(EMPTY);
-      await load();
+      reload();
     } catch (err) {
       setError(err instanceof Error ? err.message : "No se pudo guardar");
     } finally {
@@ -93,7 +81,7 @@ export function SessionsPage() {
     setError("");
     try {
       await adminFetch("Admin/Sessions", { method: "DELETE", token, query: { id } });
-      await load();
+      reload();
     } catch (err) {
       setError(err instanceof Error ? err.message : "No se pudo borrar");
     }
@@ -119,7 +107,7 @@ export function SessionsPage() {
           Volver al evento
         </Link>
       </p>
-      {error ? <Banner>{error}</Banner> : null}
+      {error || loadError ? <Banner>{error || loadError}</Banner> : null}
       {!loading && months.length > 0 ? (
         <div className="grid gap-4 sm:grid-cols-2">
           <SelectField

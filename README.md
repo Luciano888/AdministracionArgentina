@@ -33,7 +33,7 @@ Panel: [http://localhost:5174](http://localhost:5174)
 | `npm run dev` | Panel en el puerto 5174, con proxy de `/api` a `VO_API_ORIGIN` (por defecto `:3000`) |
 | `npm run build` | Chequeo de tipos (`tsc -b`) y build de producción en `dist/` |
 | `npm run lint` | ESLint |
-| `npm run test:e2e` | Playwright (necesita el repo hermano y Postgres) |
+| `npm run test:e2e` | Playwright (necesita el repo hermano y su base de datos) |
 
 La CI (`.github/workflows/ci.yml`) corre `lint` y `build` en cada push y PR. Los E2E no corren ahí.
 
@@ -42,7 +42,7 @@ La CI (`.github/workflows/ci.yml`) corre `lint` y `build` en cada push y PR. Los
 ```text
 src/
 ├── components/   Shell (layout + menú), ui.tsx (botones, campos, Spinner), formulario de evento
-├── lib/          api.ts (fetch a Admin/*), session.ts (sesión en sessionStorage), helpers
+├── lib/          api.ts (fetch a Admin/*), useAdminQuery.ts (GET con spinner/error/recarga), session.ts (sesión en sessionStorage), helpers
 ├── pages/        una página por ruta (recintos, eventos, tarifas, sesiones, cajeros, terminales, entradas)
 └── types.ts      tipos del contrato
 e2e/              caminos del panel con Playwright
@@ -57,6 +57,25 @@ Los caminos del panel están en `e2e/` (Playwright), igual que la tienda y la ta
 npx playwright install chromium
 npm run test:e2e
 ```
+
+Para cargar datos, las páginas usan `useAdminQuery` y cada sección muestra un `Spinner` mientras espera. En los tests, ese spinner se busca con `spinner(page, "Cargando …")` de `e2e/helpers.ts`, porque `getByRole("status", { name })` nunca encuentra nada.
+
+| Spec | Qué cubre |
+|------|-----------|
+| `auth` | Login, roles, alcance por recinto, token vencido y rechazos de la API |
+| `carga` | Spinner, error y vacío de cada lista y formulario, con respuestas simuladas (no escribe en la base) |
+| `eventos` | Formulario del evento (categoría, topes, duración, mapa simulado, imagen) y CRUD con tarifas y sesiones |
+| `sesiones` | Filtros por mes y semana |
+| `caja` | Cajeros, terminales y consulta de entradas |
+| `recintos` | Alta y edición de recintos (solo la plataforma) |
+| `ventas` | Reglas que necesitan una venta: 409 al borrar o bajar el cupo, compra `TQ-` en entradas |
+
+**Los E2E escriben en la base que configura VentaOnlineArgentina** (su `.env` / `.env.local`). Datos que quedan después de cada corrida:
+
+- un recinto `e2e-…` (`recintos.spec`) y un cajero `cajero-…@ccs-001` (`caja.spec`);
+- siempre los mismos evento «E2E ventas» (`e2e-ventas`) y terminal `E2E-VENTAS` en ccs-001, que `ventas.spec` reutiliza y a los que suma una venta por corrida. Con ventas no se pueden borrar.
+
+Los eventos que crean `eventos.spec` y las terminales de `caja.spec` se borran al terminar.
 
 Demo: `admin@plataforma` / `admin123` (todos los recintos) o `admin@ccs-001` / `admin123` (Centro Cultural). Son usuarios del seed local: el seed nunca debe correr contra producción.
 

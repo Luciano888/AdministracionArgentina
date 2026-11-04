@@ -1,12 +1,12 @@
 import { expect, test } from "@playwright/test";
-import { acceptDialogs, loginVenue, removeTerminalByCode, stamp } from "./helpers";
+import { acceptDialogs, loginVenue, removeTerminalByCode, stamp, spinner } from "./helpers";
 
 test("se crea y se edita un cajero", async ({ page }) => {
   const mark = stamp();
   await loginVenue(page);
   await page.getByRole("link", { name: "Cajeros" }).click();
   await expect(page.getByRole("heading", { name: "Cajeros" })).toBeVisible();
-  await expect(page.getByRole("status", { name: "Cargando cajeros" })).toBeHidden();
+  await expect(spinner(page, "Cargando cajeros")).toBeHidden();
 
   await page.getByLabel("Nombre").fill(`Cajero ${mark}`);
   await page.getByLabel("Email").fill(`cajero-${mark}@ccs-001`);
@@ -69,7 +69,7 @@ test("las entradas emitidas se consultan y no se anulan", async ({ page }) => {
   await expect(page.getByText("Anular y reimprimir se hace en la caja.")).toBeVisible();
   await expect(page.getByRole("button", { name: "Anular" })).toHaveCount(0);
 
-  await expect(page.getByRole("status", { name: "Cargando entradas" })).toBeHidden();
+  await expect(spinner(page, "Cargando entradas")).toBeHidden();
   await page.getByLabel("Localizador, email o código").fill("ZZZ-NO-EXISTE");
   const filtered = page.waitForResponse(
     (res) => res.url().includes("Admin/Entradas") && res.url().includes("q=ZZZ-NO-EXISTE") && res.ok()

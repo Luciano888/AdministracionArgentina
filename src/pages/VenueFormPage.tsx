@@ -1,8 +1,9 @@
-import { type FormEvent, useEffect, useState } from "react";
+import { type FormEvent, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Banner, Card, Field, PageTitle, PrimaryButton, Spinner } from "@/components/ui";
 import { adminFetch } from "@/lib/api";
 import { useAdmin } from "@/lib/session";
+import { useAdminQuery } from "@/lib/useAdminQuery";
 import type { Features, Theme, Venue } from "@/types";
 
 const EMPTY_THEME: Theme = { primary: "#2563eb", primaryDark: "#1d4ed8", primaryForeground: "#ffffff" };
@@ -24,43 +25,24 @@ export function VenueFormPage() {
   const [features, setFeatures] = useState<Features>(EMPTY_FEATURES);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
-  const [loading, setLoading] = useState(Boolean(tenantId));
+  const { data: rows, loading, error: loadError } = useAdminQuery<Venue[]>("Admin/Tenants", {}, { enabled: !creating });
+  const loaded = !creating && !loading && rows ? (rows.find((row) => row.id === tenantId) ?? null) : undefined;
+  const [filledFrom, setFilledFrom] = useState<Venue | null | undefined>(undefined);
 
-  useEffect(() => {
-    if (!tenantId) {
-      setLoading(false);
-      return;
-    }
-    let cancelled = false;
-    setLoading(true);
-    adminFetch<Venue[]>("Admin/Tenants", { token: session.token })
-      .then((rows) => {
-        if (cancelled) return;
-        const venue = rows.find((row) => row.id === tenantId);
-        if (!venue) {
-          setError("Recinto no encontrado");
-          return;
-        }
-        setId(venue.id);
-        setSlug(venue.slug);
-        setName(venue.name);
-        setShortName(venue.shortName);
-        setTagline(venue.tagline);
-        setCity(venue.city);
-        setLogo(venue.logo);
-        setTheme(venue.theme);
-        setFeatures(venue.features);
-      })
-      .catch((err) => {
-        if (!cancelled) setError(err instanceof Error ? err.message : "No se pudo cargar");
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [tenantId, session.token]);
+  // Al llegar el recinto se copia una vez al formulario (ajuste de estado en el render, sin efecto).
+  if (loaded && loaded !== filledFrom) {
+    setFilledFrom(loaded);
+    setId(loaded.id);
+    setSlug(loaded.slug);
+    setName(loaded.name);
+    setShortName(loaded.shortName);
+    setTagline(loaded.tagline);
+    setCity(loaded.city);
+    setLogo(loaded.logo);
+    setTheme(loaded.theme);
+    setFeatures(loaded.features);
+  }
+  const loadProblem = loadError || (loaded === null ? "Recinto no encontrado" : "");
 
   async function onSubmit(event: FormEvent) {
     event.preventDefault();
@@ -132,7 +114,7 @@ export function VenueFormPage() {
             Login de compradores
           </label>
         </div>
-        {error ? <Banner>{error}</Banner> : null}
+        {error || loadProblem ? <Banner>{error || loadProblem}</Banner> : null}
         <PrimaryButton type="submit" disabled={busy}>
           {busy ? "Guardando…" : "Guardar"}
         </PrimaryButton>

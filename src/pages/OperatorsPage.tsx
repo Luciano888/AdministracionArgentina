@@ -1,8 +1,9 @@
-import { type FormEvent, useEffect, useState } from "react";
+import { type FormEvent, useState } from "react";
 import { useParams } from "react-router-dom";
 import { Banner, Card, Field, GhostButton, PageTitle, PrimaryButton, SelectField, Spinner } from "@/components/ui";
 import { adminFetch } from "@/lib/api";
 import { useAdmin } from "@/lib/session";
+import { useAdminQuery } from "@/lib/useAdminQuery";
 import type { Staff } from "@/types";
 
 const EMPTY = { id: "", nombre: "", email: "", password: "", role: "cashier" as Staff["role"], active: true };
@@ -10,24 +11,10 @@ const EMPTY = { id: "", nombre: "", email: "", password: "", role: "cashier" as 
 export function OperatorsPage() {
   const { tenantId = "" } = useParams();
   const token = useAdmin((s) => s.session)!.token;
-  const [rows, setRows] = useState<Staff[]>([]);
+  const { data: rows = [], loading, error: loadError, reload } = useAdminQuery<Staff[]>("Admin/Operators", { tenantId });
   const [draft, setDraft] = useState(EMPTY);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
-  const [loading, setLoading] = useState(true);
-
-  function load() {
-    setLoading(true);
-    return adminFetch<Staff[]>("Admin/Operators", { token, query: { tenantId } })
-      .then(setRows)
-      .catch((err) => setError(err instanceof Error ? err.message : "No se pudieron cargar los cajeros"))
-      .finally(() => setLoading(false));
-  }
-
-  useEffect(() => {
-    load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tenantId, token]);
 
   async function onSubmit(event: FormEvent) {
     event.preventDefault();
@@ -48,7 +35,7 @@ export function OperatorsPage() {
         },
       });
       setDraft(EMPTY);
-      await load();
+      reload();
     } catch (err) {
       setError(err instanceof Error ? err.message : "No se pudo guardar");
     } finally {
@@ -60,7 +47,7 @@ export function OperatorsPage() {
     <div className="space-y-6">
       <PageTitle kicker="Caja">Cajeros</PageTitle>
       <p className="text-sm text-slate-500">Entran a la taquilla. No administran este panel.</p>
-      {error ? <Banner>{error}</Banner> : null}
+      {error || loadError ? <Banner>{error || loadError}</Banner> : null}
       <Card className="overflow-x-auto">
         <table className="w-full text-left text-sm">
           <thead className="text-slate-500">

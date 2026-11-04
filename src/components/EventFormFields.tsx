@@ -107,13 +107,12 @@ export function LocationField({ value, onChange }: { value: string; onChange: (v
   const [looking, setLooking] = useState(false);
   const [mapError, setMapError] = useState("");
 
+  const query = value.trim();
+  const searching = editing && query.length >= 3;
+  const suggestions = searching ? places : [];
+
   useEffect(() => {
-    const query = value.trim();
-    if (!editing || query.length < 3) {
-      setPlaces([]);
-      setLooking(false);
-      return;
-    }
+    if (!searching) return;
     const ctrl = new AbortController();
     const timer = window.setTimeout(async () => {
       setLooking(true);
@@ -140,7 +139,7 @@ export function LocationField({ value, onChange }: { value: string; onChange: (v
       window.clearTimeout(timer);
       ctrl.abort();
     };
-  }, [editing, value]);
+  }, [searching, query]);
 
   return (
     <div className="space-y-1.5 text-sm">
@@ -156,11 +155,11 @@ export function LocationField({ value, onChange }: { value: string; onChange: (v
         className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-slate-900 outline-none ring-primary/30 focus:ring-2"
         autoComplete="off"
       />
-      {looking ? <Spinner label="Buscando en el mapa…" className="text-xs" /> : null}
+      {searching && looking ? <Spinner label="Buscando en el mapa…" className="text-xs" /> : null}
       {mapError ? <p className="text-xs text-slate-500">{mapError}</p> : null}
-      {places.length > 0 ? (
+      {suggestions.length > 0 ? (
         <ul className="overflow-hidden rounded-xl border border-slate-200 bg-white">
-          {places.map((place) => (
+          {suggestions.map((place) => (
             <li key={place.place_id}>
               <button
                 type="button"
