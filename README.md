@@ -17,7 +17,7 @@ Documents/
 
 ## Arranque
 
-Hace falta Node 22 (está en `.nvmrc`: `nvm use`) y la API de Venta Online en el puerto 3000, con su base (`npm run db:push` y `npm run db:seed` en ese repo).
+Hace falta Node 22 (está en `.nvmrc`: `nvm use`) y la API de Venta Online en el puerto 3000, con su base (`npm run db:migrate` y `npm run db:seed` en ese repo).
 
 ```bash
 nvm use
