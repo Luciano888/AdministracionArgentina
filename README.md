@@ -27,6 +27,10 @@ npm run dev
 
 Panel: [http://localhost:5174](http://localhost:5174)
 
+## Producción
+
+Proyecto Vite en Vercel. `vercel.json` manda todas las rutas a `index.html` (el panel usa rutas del navegador). Única variable: `VITE_API_BASE` con la URL pública de la tienda; se fija en el build, así que si cambia hay que redeployar. La URL del panel va en `TAQUILLA_ORIGINS` de la tienda (CORS). Paso a paso: `docs/DEPLOY.md` en VentaOnlineArgentina.
+
 ## Scripts
 
 | Script | Qué hace |
