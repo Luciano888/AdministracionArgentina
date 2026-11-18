@@ -25,7 +25,7 @@ No cobra, no abre turno y no anula. Eso sigue en Taquilla.
 En Venta Online, con Postgres:
 
 ```bash
-npm run db:push
+npm run db:migrate
 npm run db:seed
 npm run dev
 ```
