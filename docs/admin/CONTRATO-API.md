@@ -10,6 +10,15 @@ Precios y cupo son enteros en pesos. `pvpBoxOffice` null significa que la taquil
 - `POST Admin/Tenants` — solo `platform`. Body: `id`, `slug`, `name`, `shortName`, `tagline`, `city`, `logo`, `theme` (`primary`, `primaryDark`, `primaryForeground` en `#rrggbb`), `features` (`nominacion`, `factura`, `login`).
 - `PUT Admin/Tenants` — mismos campos editables. `id` y `slug` no cambian.
 
+## Medios de pago
+
+- `GET Admin/PaymentSettings?tenantId=` — la plataforma, de cualquier recinto; un admin, del suyo (`tenantId` opcional). Respuesta: `{ tenantId, serviceFee: { percent, minimum } }`.
+- `PUT Admin/PaymentSettings` — solo `platform`. Body: `{ tenantId, serviceFee: { percent, minimum } }`. Devuelve lo mismo que el GET.
+
+`serviceFee` es el cargo por servicio de la venta online, que paga el comprador (`docs/MARKETPLACE.md` en VentaOnlineArgentina). Por cada entrada paga se cobra `max(redondeo(precio × percent / 100), minimum)`. Las entradas gratis no llevan cargo y la taquilla nunca lo cobra. `percent` va de 0 a 30 con hasta dos decimales; `minimum` es un entero en pesos. `0` y `0` significa sin cargo, que es el valor por defecto. Un valor fuera de rango responde 400.
+
+La conexión con Mercado Pago se suma a esta misma respuesta en la fase 2.
+
 ## Eventos
 
 - `GET Admin/Events?tenantId=`

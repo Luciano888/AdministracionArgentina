@@ -26,6 +26,12 @@ export type Venue = {
   config?: Partial<VenueConfig> | null;
 };
 
+/** `Admin/PaymentSettings`. La conexión con Mercado Pago se suma en la fase 2 del marketplace. */
+export type PaymentSettings = {
+  tenantId: string;
+  serviceFee: { percent: number; minimum: number };
+};
+
 export type AdminSession = {
   token: string;
   operatorId: string;

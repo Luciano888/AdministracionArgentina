@@ -50,7 +50,7 @@ src/
 ├── components/   Shell (layout + menú), ui.tsx (botones, campos, Spinner), Feedback.tsx (diálogo de confirmación y avisos), formulario de evento
 ├── lib/          api.ts (fetch a Admin/*), useAdminQuery.ts (GET con spinner/error/recarga), session.ts (sesión en sessionStorage),
 │                 venueConfig.ts (reglas por recinto), feedback.ts (useConfirm/useToast), sessionDates.ts, format.ts
-├── pages/        una página por ruta (recintos, eventos, tarifas, sesiones, cajeros, terminales, entradas)
+├── pages/        una página por ruta (recintos, eventos, tarifas, sesiones, cajeros, terminales, entradas, medios de pago)
 └── types.ts      tipos del contrato
 e2e/              caminos del panel con Playwright
 docs/admin/       contrato con Venta Online
@@ -80,6 +80,7 @@ Para cargar datos, las páginas usan `useAdminQuery` y cada sección muestra un 
 | `eventos` | Formulario del evento (categoría, topes, duración, mapa simulado, imagen) y CRUD con tarifas y sesiones |
 | `sesiones` | Filtros por mes y semana |
 | `caja` | Cajeros, terminales y consulta de entradas |
+| `medios-de-pago` | Cargo por servicio: la plataforma lo fija y ve un ejemplo; el admin del recinto solo lo lee. Deja ccs-001 sin cargo al terminar |
 | `recintos` | Alta y edición de recintos (solo la plataforma) |
 | `ventas` | Reglas que necesitan una venta: 409 al borrar o bajar el cupo, compra `TQ-` en entradas |
 

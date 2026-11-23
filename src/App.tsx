@@ -8,6 +8,7 @@ import { EventFormPage } from "@/pages/EventFormPage";
 import { EventsPage } from "@/pages/EventsPage";
 import { LoginPage } from "@/pages/LoginPage";
 import { OperatorsPage } from "@/pages/OperatorsPage";
+import { PaymentsPage } from "@/pages/PaymentsPage";
 import { SessionsPage } from "@/pages/SessionsPage";
 import { TariffsPage } from "@/pages/TariffsPage";
 import { TerminalsPage } from "@/pages/TerminalsPage";
@@ -46,6 +47,7 @@ export default function App() {
             <Route path="/recintos/:tenantId/cajeros" element={<OperatorsPage />} />
             <Route path="/recintos/:tenantId/terminales" element={<TerminalsPage />} />
             <Route path="/recintos/:tenantId/entradas" element={<TicketsPage />} />
+            <Route path="/recintos/:tenantId/medios-de-pago" element={<PaymentsPage />} />
           </Route>
           <Route path="*" element={<Navigate to="/recintos" replace />} />
         </Routes>
