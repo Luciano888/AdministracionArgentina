@@ -1,4 +1,4 @@
-import { Building2, CalendarClock, LogOut, Monitor, Ticket, Users, Wallet, type LucideIcon } from "lucide-react";
+import { Building2, CalendarClock, CreditCard, LogOut, Monitor, Ticket, Users, Wallet, type LucideIcon } from "lucide-react";
 import { useEffect, type ReactNode } from "react";
 import { NavLink, Navigate, Outlet, useParams } from "react-router-dom";
 import { Spinner } from "@/components/ui";
@@ -104,6 +104,7 @@ export function Shell() {
           { to: `${base}/cajeros`, label: "Cajeros", icon: Users, end: false },
           { to: `${base}/terminales`, label: "Terminales", icon: Monitor, end: false },
           { to: `${base}/entradas`, label: "Entradas emitidas", icon: Ticket, end: false },
+          { to: `${base}/medios-de-pago`, label: "Medios de pago", icon: CreditCard, end: false },
         ]
       : []),
   ];
