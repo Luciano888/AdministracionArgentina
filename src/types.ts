@@ -26,10 +26,21 @@ export type Venue = {
   config?: Partial<VenueConfig> | null;
 };
 
-/** `Admin/PaymentSettings`. La conexión con Mercado Pago se suma en la fase 2 del marketplace. */
+/**
+ * Cuenta de Mercado Pago del recinto. `oauth`: conectada con el botón. `manual`: token cargado a mano
+ * (solo desarrollo). `none`: sin cuenta, el recinto no cobra con Mercado Pago.
+ */
+export type MercadoPagoConnection = {
+  status: "oauth" | "manual" | "none";
+  accountId: string | null;
+  tokenExpiresAt: string | null;
+};
+
+/** `Admin/PaymentSettings`. */
 export type PaymentSettings = {
   tenantId: string;
   serviceFee: { percent: number; minimum: number };
+  mercadoPago: MercadoPagoConnection;
 };
 
 export type AdminSession = {

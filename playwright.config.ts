@@ -32,6 +32,12 @@ export default defineConfig({
         MP_MOCK: "1",
         MP_ACCESS_TOKEN: "e2e-mock",
         APP_URL: apiOrigin,
+        // After linking Mercado Pago (mock), the OAuth callback sends the browser back to this panel.
+        ADMIN_APP_URL: uiOrigin,
+        // Test-only master key (same as VentaOnlineArgentina's E2E): linking Mercado Pago stores tokens encrypted.
+        CONFIG_ENCRYPTION_KEY: Buffer.alloc(32, 42).toString("base64"),
+        // Venue config written by a test must be visible right away.
+        TENANT_CONFIG_CACHE_MS: "0",
         RESEND_API_KEY: "",
         MAIL_DUMP: "",
         MAIL_SMTP_HOST: "",

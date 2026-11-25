@@ -1,8 +1,10 @@
-import { type FormEvent, useState } from "react";
-import { useParams } from "react-router-dom";
+import { type FormEvent, useEffect, useRef, useState } from "react";
+import { useParams, useSearchParams } from "react-router-dom";
+import { MercadoPagoCard } from "@/components/MercadoPagoCard";
 import { Banner, Card, Field, PageTitle, PrimaryButton, Spinner } from "@/components/ui";
 import { adminFetch } from "@/lib/api";
 import { useToast } from "@/lib/feedback";
+import { connectErrorMessage } from "@/lib/mercadoPago";
 import { serviceFeeError, serviceFeePerTicket } from "@/lib/serviceFee";
 import { useAdmin } from "@/lib/session";
 import { useAdminQuery } from "@/lib/useAdminQuery";
@@ -31,6 +33,19 @@ export function PaymentsPage() {
     setPercent(String(data.serviceFee.percent));
     setMinimum(String(data.serviceFee.minimum));
   }
+
+  // Vuelta de Mercado Pago: `?mp=ok` avisa y se limpia; `?mp=error&motivo=…` queda a la vista.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const mpResult = searchParams.get("mp");
+  const connectError = mpResult === "error" ? connectErrorMessage(searchParams.get("motivo")) : "";
+  // StrictMode runs the effect twice before the URL is cleaned: announce once.
+  const announced = useRef(false);
+  useEffect(() => {
+    if (mpResult !== "ok" || announced.current) return;
+    announced.current = true;
+    toast("Cuenta de Mercado Pago conectada");
+    setSearchParams({}, { replace: true });
+  }, [mpResult, setSearchParams, toast]);
 
   const draft = { percent: Number(percent.replace(",", ".")), minimum: Number(minimum) };
   const draftError = serviceFeeError(draft);
@@ -63,8 +78,18 @@ export function PaymentsPage() {
   return (
     <div className="space-y-6">
       <PageTitle kicker="Cobros">Medios de pago</PageTitle>
-      {error || loadError ? <Banner>{error || loadError}</Banner> : null}
+      {error || loadError || connectError ? <Banner>{error || loadError || connectError}</Banner> : null}
       {loading ? <Spinner label="Cargando medios de pago" /> : null}
+
+      {data ? (
+        <section className="space-y-3">
+          <h2 className="text-base font-semibold text-slate-900">Mercado Pago</h2>
+          <p className="text-sm text-slate-500">
+            El recinto cobra en su propia cuenta. Al conectarla, el cargo por servicio se acredita solo en la cuenta de la plataforma.
+          </p>
+          <MercadoPagoCard tenantId={tenantId} connection={data.mercadoPago} onError={setError} onChange={reload} />
+        </section>
+      ) : null}
 
       {data ? (
         <section className="space-y-3">
@@ -116,16 +141,6 @@ export function PaymentsPage() {
           )}
         </section>
       ) : null}
-
-      <section className="space-y-3">
-        <h2 className="text-base font-semibold text-slate-900">Mercado Pago</h2>
-        <Card>
-          <p className="text-sm text-slate-600">
-            Pronto vas a poder conectar la cuenta de Mercado Pago del recinto desde acá, con un botón. El cargo por servicio se
-            va a acreditar solo en cada venta.
-          </p>
-        </Card>
-      </section>
     </div>
   );
 }

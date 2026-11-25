@@ -12,12 +12,17 @@ Precios y cupo son enteros en pesos. `pvpBoxOffice` null significa que la taquil
 
 ## Medios de pago
 
-- `GET Admin/PaymentSettings?tenantId=` — la plataforma, de cualquier recinto; un admin, del suyo (`tenantId` opcional). Respuesta: `{ tenantId, serviceFee: { percent, minimum } }`.
+- `GET Admin/PaymentSettings?tenantId=` — la plataforma, de cualquier recinto; un admin, del suyo (`tenantId` opcional). Respuesta: `{ tenantId, serviceFee: { percent, minimum }, mercadoPago: { status, accountId, tokenExpiresAt } }`.
 - `PUT Admin/PaymentSettings` — solo `platform`. Body: `{ tenantId, serviceFee: { percent, minimum } }`. Devuelve lo mismo que el GET.
 
 `serviceFee` es el cargo por servicio de la venta online, que paga el comprador (`docs/MARKETPLACE.md` en VentaOnlineArgentina). Por cada entrada paga se cobra `max(redondeo(precio × percent / 100), minimum)`. Las entradas gratis no llevan cargo y la taquilla nunca lo cobra. `percent` va de 0 a 30 con hasta dos decimales; `minimum` es un entero en pesos. `0` y `0` significa sin cargo, que es el valor por defecto. Un valor fuera de rango responde 400.
 
-La conexión con Mercado Pago se suma a esta misma respuesta en la fase 2.
+- `POST Admin/MercadoPago/Connect` — el admin, de su recinto; la plataforma, de cualquiera. Body: `{ tenantId }`. Respuesta: `{ authorizationUrl }`: el panel lleva ahí al navegador. 409 si la API no tiene su aplicación de Mercado Pago (`MP_CLIENT_ID` / `MP_CLIENT_SECRET`) o `CONFIG_ENCRYPTION_KEY`.
+- `POST Admin/MercadoPago/Disconnect` — mismos permisos. Body: `{ tenantId }`. Borra las credenciales; devuelve lo mismo que el GET.
+
+`mercadoPago.status`: `oauth` (cuenta conectada con el botón; `accountId` es la cuenta de Mercado Pago y `tokenExpiresAt` el vencimiento del permiso), `manual` (token cargado a mano, solo desarrollo) o `none` (no cobra con Mercado Pago).
+
+Después de autorizar en Mercado Pago, la API vuelve a `{ADMIN_APP_URL}/recintos/{tenantId}/medios-de-pago` con `?mp=ok` o `?mp=error&motivo=` y uno de estos motivos: `estado` (enlace vencido o inválido; en ese caso vuelve a `/recintos`), `denegado` (se canceló en Mercado Pago), `permiso` (el operador ya no administra el recinto), `canje` (Mercado Pago rechazó el código) o `guardado` (no se pudo guardar).
 
 ## Eventos
 
