@@ -80,7 +80,7 @@ Para cargar datos, las páginas usan `useAdminQuery` y cada sección muestra un 
 | `eventos` | Formulario del evento (categoría, topes, duración, mapa simulado, imagen) y CRUD con tarifas y sesiones |
 | `sesiones` | Filtros por mes y semana |
 | `caja` | Cajeros, terminales y consulta de entradas |
-| `medios-de-pago` | Cargo por servicio: la plataforma lo fija y ve un ejemplo; el admin del recinto solo lo lee. Deja ccs-001 sin cargo al terminar |
+| `medios-de-pago` | Conectar y desconectar Mercado Pago (autorización simulada de la API), cancelar en Mercado Pago, y el cargo por servicio: la plataforma lo fija; el admin del recinto solo lo lee. Deja ccs-001 sin cargo y mdr-002 sin cuenta al terminar |
 | `recintos` | Alta y edición de recintos (solo la plataforma) |
 | `ventas` | Reglas que necesitan una venta: 409 al borrar o bajar el cupo, compra `TQ-` en entradas |
 
