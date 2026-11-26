@@ -67,12 +67,28 @@ export function MercadoPagoCard({
 
   return (
     <Card className="space-y-4">
-      {connection.status === "oauth" ? (
+      {connection.status === "oauth" && connection.expired ? (
+        <div className="space-y-1 text-sm" role="alert">
+          <p className="font-medium text-red-700">El permiso venció</p>
+          <p className="text-slate-600">
+            {connection.tokenExpiresAt ? `Venció el ${formatDate(connection.tokenExpiresAt)}. ` : ""}
+            El recinto no está cobrando online ni con QR o Point. Tocá «Reconectar» para volver a cobrar.
+          </p>
+        </div>
+      ) : connection.status === "oauth" && connection.renewalFailedAt ? (
+        <div className="space-y-1 text-sm" role="alert">
+          <p className="font-medium text-amber-700">Hay que reconectar la cuenta</p>
+          <p className="text-slate-600">
+            No se pudo renovar el permiso automáticamente (último intento: {formatDate(connection.renewalFailedAt)}).
+            {connection.tokenExpiresAt ? ` Sigue cobrando hasta el ${formatDate(connection.tokenExpiresAt)}: tocá «Reconectar» antes de esa fecha.` : " Tocá «Reconectar»."}
+          </p>
+        </div>
+      ) : connection.status === "oauth" ? (
         <div className="space-y-1 text-sm">
           <p className="font-medium text-emerald-700">Cuenta conectada</p>
           <p className="text-slate-600">
             Cuenta de Mercado Pago {connection.accountId ?? "sin número"}.
-            {connection.tokenExpiresAt ? ` El permiso vence el ${formatDate(connection.tokenExpiresAt)}.` : ""}
+            {connection.tokenExpiresAt ? ` El permiso vence el ${formatDate(connection.tokenExpiresAt)} y se renueva solo.` : ""}
           </p>
         </div>
       ) : connection.status === "manual" ? (

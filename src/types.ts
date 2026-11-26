@@ -34,6 +34,10 @@ export type MercadoPagoConnection = {
   status: "oauth" | "manual" | "none";
   accountId: string | null;
   tokenExpiresAt: string | null;
+  /** El permiso venció: el recinto no está cobrando con Mercado Pago. */
+  expired: boolean;
+  /** Falló la renovación automática (fecha del último intento). Sigue andando hasta `tokenExpiresAt`. */
+  renewalFailedAt: string | null;
 };
 
 /** `Admin/PaymentSettings`. */
